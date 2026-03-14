@@ -97,3 +97,24 @@ def test_publication_transition_queued_keeps_task_scheduled(client):
     task_res = client.get(f"/api/v1/tasks/{task['id']}")
     assert task_res.status_code == 200
     assert task_res.json()['status'] == 'scheduled'
+
+
+
+def test_duplicate_publication_create_reuses_existing_publication(client):
+    task, publication = _create_approved_publication(client, scheduled=False)
+
+    draft_list = client.get(f"/api/v1/tasks/{task['id']}/drafts").json()
+    draft_id = draft_list[0]['id']
+
+    channel_id = publication['telegram_channel_id']
+    duplicate = client.post(
+        f"/api/v1/drafts/{draft_id}/publications",
+        json={'telegram_channel_id': channel_id},
+    )
+
+    assert duplicate.status_code == 201
+    assert duplicate.json()['id'] == publication['id']
+
+    publications = client.get(f"/api/v1/drafts/{draft_id}/publications")
+    assert publications.status_code == 200
+    assert len(publications.json()) == 1

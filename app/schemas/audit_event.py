@@ -40,3 +40,7 @@ class AuditEventRead(TimestampedSchema):
     before_json: dict | None
     after_json: dict | None
     notes: str | None
+    changed_fields: list[str] = []
+    summary: str | None = None
+    request_id: str | None = None
+    actor: str | None = None

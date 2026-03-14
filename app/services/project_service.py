@@ -11,11 +11,13 @@ from app.services.crud import update_entity
 
 
 def list_projects_for_owner(db: Session, owner_user_id):
-    return [
-        project
-        for project in db.query(Project).all()
-        if project.owner_user_id == owner_user_id
-    ]
+    if hasattr(db, 'storage'):
+        return [
+            project
+            for project in db.query(Project).all()
+            if project.owner_user_id == owner_user_id
+        ]
+    return db.query(Project).filter(Project.owner_user_id == owner_user_id).all()
 
 
 
@@ -30,6 +32,16 @@ def create_project_for_owner(db: Session, payload: ProjectCreate, owner: User, w
     db.commit()
     db.refresh(project)
     create_project_config_version(db, project, created_by_user_id=owner.id, change_summary='Initial project config')
+    create_audit_event(
+        db,
+        project_id=project.id,
+        user_id=owner.id,
+        entity_type='project',
+        entity_id=project.id,
+        action='create_project',
+        before_json=None,
+        after_json=snapshot_entity(project),
+    )
     return project
 
 

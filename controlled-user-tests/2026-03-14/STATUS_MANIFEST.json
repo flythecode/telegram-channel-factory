@@ -1,0 +1,65 @@
+{
+  "project": "telegram-channel-factory",
+  "backlogItem": 63,
+  "title": "Провести первые controlled user tests с реальными людьми на тестовом боте",
+  "date": "2026-03-14",
+  "readyPacket": true,
+  "readyAssets": [
+    "../../FIRST_USER_LAUNCH_PATH.md",
+    "../../CONTROLLED_USER_TEST_PLAN.md",
+    "../../CONTROLLED_USER_TEST_RESULTS_TEMPLATE.md",
+    "./README.md",
+    "./MODERATOR_CHECKLIST.md",
+    "./OBSERVATION_MATRIX.md",
+    "./LIVE_SESSION_SCRIPT.md",
+    "./PARTICIPANT_INVITE_TEMPLATES.md",
+    "./FIRST_WAVE_SYNTHESIS_TEMPLATE.md",
+    "./EXECUTION_HANDOFF.md",
+    "./PARTICIPANT_01.md",
+    "./PARTICIPANT_02.md",
+    "./PARTICIPANT_03.md"
+  ],
+  "participantFiles": [
+    {
+      "path": "./PARTICIPANT_01.md",
+      "filled": false
+    },
+    {
+      "path": "./PARTICIPANT_02.md",
+      "filled": false
+    },
+    {
+      "path": "./PARTICIPANT_03.md",
+      "filled": false
+    }
+  ],
+  "completionCriteria": {
+    "minRealParticipants": 2,
+    "separateResultPerParticipant": true,
+    "scenarios": [
+      "A",
+      "B",
+      "C"
+    ],
+    "needsObservedUxFindings": true
+  },
+  "currentStatus": "blocked_on_real_participants",
+  "lastVerifiedAt": "2026-03-14T06:04:14Z",
+  "latestEvidence": [
+    "template_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_01.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_02.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_03.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "filled_participant_files=0"
+  ],
+  "blockers": [
+    "No invited real users are available in this workspace",
+    "External contact cannot be initiated without explicit approval"
+  ],
+  "exactNextActions": [
+    "Invite at least two real participants after explicit approval",
+    "Run scenarios A/B/C on the test bot without off-script guidance",
+    "Fill one participant result file per person",
+    "Synthesize findings into the dated report and backlog item 64 input"
+  ]
+}

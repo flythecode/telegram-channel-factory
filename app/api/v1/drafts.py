@@ -8,6 +8,7 @@ from app.models.content_task import ContentTask
 from app.models.draft import Draft
 from app.schemas.draft import DraftCreate, DraftRead, DraftUpdate
 from app.services.agent_service import get_default_writer_agent
+from app.services.audit_service import create_audit_event, snapshot_entity
 from app.services.crud import get_entity_or_404, update_entity
 from app.services.orchestration import run_linear_orchestration
 from app.services.workflow import approve_draft, mark_task_as_drafted, reject_draft
@@ -39,6 +40,15 @@ def create_draft(task_id: UUID, payload: DraftCreate, db: Session = Depends(get_
     db.add(task)
     db.commit()
     db.refresh(draft)
+    create_audit_event(
+        db,
+        project_id=task.project_id,
+        entity_type='draft',
+        entity_id=draft.id,
+        action='create_draft',
+        before_json=None,
+        after_json=snapshot_entity(draft),
+    )
     return draft
 
 
@@ -61,11 +71,21 @@ def approve_draft_endpoint(draft_id: UUID, db: Session = Depends(get_db)):
     draft = get_entity_or_404(db, Draft, draft_id, "Draft not found")
 
     task = draft.content_task
+    before = snapshot_entity(draft)
     approve_draft(task, draft)
     db.add(draft)
     db.add(task)
     db.commit()
     db.refresh(draft)
+    create_audit_event(
+        db,
+        project_id=task.project_id,
+        entity_type='draft',
+        entity_id=draft.id,
+        action='approve_draft',
+        before_json=before,
+        after_json=snapshot_entity(draft),
+    )
     return draft
 
 
@@ -74,16 +94,37 @@ def reject_draft_endpoint(draft_id: UUID, db: Session = Depends(get_db)):
     draft = get_entity_or_404(db, Draft, draft_id, "Draft not found")
 
     task = draft.content_task
+    before = snapshot_entity(draft)
     reject_draft(task, draft)
     db.add(draft)
     db.add(task)
     db.commit()
     db.refresh(draft)
+    create_audit_event(
+        db,
+        project_id=task.project_id,
+        entity_type='draft',
+        entity_id=draft.id,
+        action='reject_draft',
+        before_json=before,
+        after_json=snapshot_entity(draft),
+    )
     return draft
 
 
 @router.post('/drafts/{draft_id}/regenerate', response_model=DraftRead)
 def regenerate_draft(draft_id: UUID, db: Session = Depends(get_db)):
     draft = get_entity_or_404(db, Draft, draft_id, 'Draft not found')
+    before = snapshot_entity(draft)
     updated = DraftUpdate(text=draft.text + '\n\n[Regenerated]', status=DraftStatus.EDITED)
-    return update_entity(db, draft, updated)
+    draft = update_entity(db, draft, updated)
+    create_audit_event(
+        db,
+        project_id=draft.content_task.project_id,
+        entity_type='draft',
+        entity_id=draft.id,
+        action='regenerate_draft',
+        before_json=before,
+        after_json=snapshot_entity(draft),
+    )
+    return draft

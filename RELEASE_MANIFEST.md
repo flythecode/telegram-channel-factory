@@ -68,6 +68,14 @@ alembic upgrade head
 make deploy-smoke
 ```
 
+### Repeatable release update path
+```bash
+APP_DIR=/srv/telegram-channel-factory \
+ENV_FILE=/etc/telegram-channel-factory/.env.live \
+RELEASE_REF=<git-tag-or-commit> \
+./scripts/release_update.sh
+```
+
 ### Release smoke checklist
 See:
 - `RELEASE_SMOKE.md`

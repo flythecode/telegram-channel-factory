@@ -76,6 +76,21 @@ make deploy-smoke
 - compose stack поднимается
 - `/health` отвечает изнутри контейнера
 
+## 8.1 Repeatable release update confidence
+```bash
+APP_DIR=/srv/telegram-channel-factory \
+ENV_FILE=/etc/telegram-channel-factory/.env.live \
+RELEASE_REF=<git-tag-or-commit> \
+./scripts/release_update.sh
+```
+
+Ожидаемо:
+- релиз идёт не от `root`
+- deploy использует secret-file policy вместо inline bot token
+- миграции применяются перед restart stack
+- post-deploy smoke-check `/health` обязателен
+- в `.release-backups/` сохраняются previous/current refs
+
 ## 9. Docs confidence
 Проверить наличие:
 - `README.md`
@@ -84,6 +99,7 @@ make deploy-smoke
 - `ENV_MODES.md`
 - `STAGING_DEMO_RUNBOOK.md`
 - `FINAL_QA_RUNBOOK.md`
+- `OPERATOR_HANDBOOK.md`
 - `RELEASE_MANIFEST.md`
 
 ## 10. Release decision

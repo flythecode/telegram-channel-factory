@@ -16,9 +16,19 @@ router = APIRouter(tags=["publications"])
 @router.post("/drafts/{draft_id}/publications", response_model=PublicationRead, status_code=status.HTTP_201_CREATED)
 def create_publication(draft_id: UUID, payload: PublicationCreate, db: Session = Depends(get_db)):
     try:
-        return queue_publication(db, draft_id, payload)
+        publication = queue_publication(db, draft_id, payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    create_audit_event(
+        db,
+        project_id=publication.draft.content_task.project_id,
+        entity_type='publication',
+        entity_id=publication.id,
+        action='create_publication',
+        before_json=None,
+        after_json=snapshot_entity(publication),
+    )
+    return publication
 
 
 @router.get("/drafts/{draft_id}/publications", response_model=list[PublicationRead])

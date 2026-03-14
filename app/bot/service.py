@@ -27,7 +27,7 @@ from app.bot.texts import (
     START_TEXT,
 )
 from app.bot.ux import human_action_label
-from app.bot.wizard import ProjectWizardService, ProjectWizardState, WizardScreen
+from app.bot.wizard import CHANNEL_CREATION_GUIDE_TEXT, ProjectWizardService, ProjectWizardState, WizardScreen
 from app.schemas.project import ProjectCreate
 
 
@@ -118,7 +118,7 @@ class BotService:
         return BotScreen(text=f'{human_action_label(action)}.\n\n{data["text"]}', buttons=data['buttons'])
 
     def channel_publications_screen(self) -> BotScreen:
-        data = section_screen('Публикации', 'Управляй очередью, scheduled и ready-to-send постами.')
+        data = section_screen('Публикации', 'Управляй очередью, запланированными и готовыми к отправке публикациями.')
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
     def channel_mode_screen(self, current_mode: str = 'manual') -> BotScreen:
@@ -138,6 +138,12 @@ class BotService:
 
     def project_ready_screen(self) -> BotScreen:
         return BotScreen(text=PROJECT_READY_TEXT, buttons=project_ready_keyboard())
+
+    def channel_creation_guide_screen(self) -> BotScreen:
+        return BotScreen(
+            text=CHANNEL_CREATION_GUIDE_TEXT,
+            buttons=[["У меня уже есть канал"], ["Проверить подключение"], ["Назад"], ["Главное меню"]],
+        )
 
     def wizard_start_screen(self) -> WizardScreen:
         return self.wizard.start()

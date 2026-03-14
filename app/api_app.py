@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.services.request_context import reset_request_context, set_request_context
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ async def request_observability_middleware(request: Request, call_next):
     request_id = request.headers.get('x-request-id') or str(uuid4())
     telegram_user_id = request.headers.get('x-telegram-user-id')
     started_at = time.perf_counter()
+    request_token, telegram_token = set_request_context(request_id=request_id, telegram_user_id=telegram_user_id)
 
     logger.info(
         'request started',
@@ -45,6 +47,7 @@ async def request_observability_middleware(request: Request, call_next):
                 'error': str(exc),
             },
         )
+        reset_request_context(request_token, telegram_token)
         return JSONResponse(
             status_code=500,
             content={'detail': 'Internal Server Error', 'request_id': request_id},
@@ -64,6 +67,7 @@ async def request_observability_middleware(request: Request, call_next):
             'duration_ms': duration_ms,
         },
     )
+    reset_request_context(request_token, telegram_token)
     return response
 
 

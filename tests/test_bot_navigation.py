@@ -21,7 +21,7 @@ def test_channel_dashboard_and_sections_exist():
     service = BotService()
     dashboard = service.channel_dashboard_screen('Alpha Channel', 'manual', 5, 2, 4)
     assert 'Alpha Channel' in dashboard.text
-    assert 'manual — каждое важное действие подтверждаешь ты' in dashboard.text
+    assert 'Ручной — каждое важное действие подтверждаешь ты' in dashboard.text
     assert 'Контент-планов: 2' in dashboard.text
     assert 'Черновиков: 4' in dashboard.text
     flat = [item for row in dashboard.buttons for item in row]
@@ -39,12 +39,12 @@ def test_channel_dashboard_and_sections_exist():
     assert 'Черновики' in drafts.text
     detail = service.draft_detail_screen('Task A', 'created', 1, 'Body text', 'writer')
     assert 'Task A' in detail.text
-    assert 'Approve' in [item for row in detail.buttons for item in row]
+    assert 'Подтвердить' in [item for row in detail.buttons for item in row]
     publications = service.publications_screen()
     assert 'Публикации' in publications.text
     publication_detail = service.publication_detail_screen('Task A', 'queued', '2026-03-20T10:00:00+00:00')
     assert 'В очереди' in publication_detail.text
-    assert 'Publish now' in [item for row in publication_detail.buttons for item in row]
+    assert 'Опубликовать сейчас' in [item for row in publication_detail.buttons for item in row]
     assert 'Режим работы' in service.channel_mode_screen('manual').text
 
 

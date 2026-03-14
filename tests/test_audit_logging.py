@@ -7,6 +7,7 @@ def test_project_update_creates_audit_event(client):
     updated = client.patch(
         f"/api/v1/projects/{project['id']}",
         json={'goal': 'grow audience', 'operation_mode': 'semi_auto'},
+        headers={'x-request-id': 'audit-project-update'},
     )
     assert updated.status_code == 200
 
@@ -14,6 +15,12 @@ def test_project_update_creates_audit_event(client):
     assert events.status_code == 200
     items = events.json()
     assert any(event['action'] == 'update_project_settings' for event in items)
+    project_update = next(event for event in items if event['action'] == 'update_project_settings')
+    assert project_update['request_id'] == 'audit-project-update'
+    assert project_update['actor'] == 'test-user-1'
+    assert 'goal' in project_update['changed_fields']
+    assert 'operation_mode' in project_update['changed_fields']
+    assert 'изменения:' in project_update['summary']
 
 
 
@@ -44,9 +51,33 @@ def test_agent_and_publication_actions_create_audit_events(client):
     events = client.get(f"/api/v1/projects/{project['id']}/audit-events")
     assert events.status_code == 200
     actions = [event['action'] for event in events.json()]
+    assert 'create_task' in actions
+    assert 'create_draft' in actions
+    assert 'approve_draft' in actions
+    assert 'create_channel' in actions
+    assert 'create_publication' in actions
     assert 'disable_agent' in actions
     assert 'update_agent_prompts' in actions
     assert 'cancel_publication' in actions
+
+
+
+def test_audit_history_support_view_exposes_filters_limit_and_latest_first(client):
+    project = client.post('/api/v1/projects', json={'name': 'Support Audit', 'language': 'ru'}).json()
+    channel = client.post(f"/api/v1/projects/{project['id']}/channels", json={'channel_title': 'Channel One'}).json()
+    client.patch(f"/api/v1/channels/{channel['id']}", json={'channel_username': '@one'})
+    client.post(f"/api/v1/channels/{channel['id']}/connect", json={'is_connected': True, 'bot_is_admin': True, 'can_post_messages': True})
+
+    filtered = client.get(
+        f"/api/v1/projects/{project['id']}/audit-events",
+        params={'entity_type': 'channel', 'limit': 2},
+    )
+    assert filtered.status_code == 200
+    items = filtered.json()
+    assert len(items) == 2
+    assert [item['action'] for item in items] == ['connect_channel', 'update_channel']
+    assert all(item['entity_type'] == 'channel' for item in items)
+    assert all(item['summary'] for item in items)
 
 
 

@@ -83,6 +83,7 @@
 - retry / backoff / error handling baseline
 - request-level observability middleware
 - audit history for key actions
+- support-grade audit timeline: summaries, changed fields, request id, actor context, latest-first filters/limits
 - deterministic test env
 
 ### 6. Infra / run path
@@ -118,6 +119,7 @@
 - worker batch continues after one runtime failure
 - retryable Telegram failures are separated from terminal failures
 - request logging + request id for observability
+- support-facing audit trail now returns latest-first history with `summary`, `changed_fields`, `request_id`, `actor`, plus `action` / `entity_type` / `limit` filters
 - Docker compose path uses container-safe DB config and healthchecks
 
 ---
@@ -136,6 +138,18 @@ MVP launch path выглядит так:
 8. отредактировать и approve draft
 9. отправить в очередь или опубликовать
 10. вернуться позже и изменить настройки
+
+### UX simplification rule
+
+На главном пути бот должен в каждом ключевом экране явно показывать **один следующий шаг**:
+- `/start` → `Создать канал`
+- summary wizard → `Подтвердить проект`
+- выбор агентной команды → рекомендовать `3 агента — Быстрый старт`
+- подключение канала → сначала выбрать `У меня уже есть канал` или `Как создать канал`, потом прислать `@username`
+- после успешного подключения → `Создать контент-план`
+- на dashboard → подсказывать ближайшее полезное действие по текущему состоянию проекта
+
+Цель этого правила: новый пользователь должен понимать, что делать дальше, без внешних объяснений и без чтения документации.
 
 ---
 
@@ -222,6 +236,19 @@ python3 scripts/run_bot.py
 
 ---
 
+### Telegram user journey without developer help
+
+После запуска bot runtime целевой пользователь проходит путь так:
+
+1. `Создать канал` → отвечает на 6 коротких вопросов.
+2. `Подтвердить проект` → выбирает рекомендуемый пресет `3 агента — Быстрый старт`.
+3. Подключает свой Telegram-канал по экрану `Осталось подключить твой Telegram-канал`.
+4. `Создать контент-план` → `Сгенерировать 10 идей` → `Создать 3 черновика`.
+5. Открывает `Черновики`, подтверждает лучший текст и создаёт публикацию.
+6. Открывает `Публикации` и отправляет пост сразу или по расписанию.
+
+Во всех ключевых экранах бот должен показывать один явный next step, чтобы пользователь не искал помощь разработчика между шагами.
+
 ## Option B — Docker Compose
 
 ```bash
@@ -250,6 +277,72 @@ Health checks:
 ```bash
 make deploy-smoke
 ```
+
+### Safer production deploy baseline
+
+Для production не использовать root-only path вроде `/root/telegram-channel-factory`.
+Базовый безопасный вариант:
+
+- системный пользователь: `tcf`
+- директория приложения: `/srv/telegram-channel-factory`
+- директория env/secrets: `/etc/telegram-channel-factory`
+- рабочая директория для compose/systemd: `/srv/telegram-channel-factory`
+- запуск сервисов: от имени `tcf`, не `root`
+- production `.env` хранить вне git working tree, например в `/etc/telegram-channel-factory/.env.live`
+- реальный Telegram token хранить отдельно, например в `/etc/telegram-channel-factory/secrets/telegram_bot_token`
+- release script должен передавать env через `docker compose --env-file ...`, без копирования secrets в `.env` внутри repo
+
+Подготовка сервера:
+
+```bash
+sudo APP_USER=tcf APP_DIR=/srv/telegram-channel-factory \
+  SECRETS_DIR=/etc/telegram-channel-factory \
+  bash scripts/prepare_server_dirs.sh
+```
+
+Первичный checkout/env:
+
+```bash
+sudo -u tcf git clone <repo> /srv/telegram-channel-factory
+sudo install -o root -g tcf -m 640 /srv/telegram-channel-factory/.env.live.example \
+  /etc/telegram-channel-factory/.env.live
+sudo install -d -o root -g tcf -m 750 /etc/telegram-channel-factory/secrets
+sudo install -o root -g tcf -m 640 /srv/telegram-channel-factory/secrets.example/telegram_bot_token.example \
+  /etc/telegram-channel-factory/secrets/telegram_bot_token
+# then replace placeholder content with the real rotated token
+```
+
+Обновление/release выполнять только от имени `tcf`.
+
+Быстрый update без фиксации release ref:
+
+```bash
+sudo -u tcf APP_DIR=/srv/telegram-channel-factory \
+  ENV_FILE=/etc/telegram-channel-factory/.env.live \
+  /srv/telegram-channel-factory/scripts/deploy_as_tcf.sh
+```
+
+Повторяемый release path с фиксированным ref, миграциями и обязательным smoke-check:
+
+```bash
+sudo -u tcf APP_DIR=/srv/telegram-channel-factory \
+  ENV_FILE=/etc/telegram-channel-factory/.env.live \
+  RELEASE_REF=<git-tag-or-commit> \
+  /srv/telegram-channel-factory/scripts/release_update.sh
+```
+
+`scripts/release_update.sh` дополнительно:
+- отказывается работать от `root`
+- валится, если production env использует inline `TELEGRAM_BOT_TOKEN` вместо secret file
+- требует детерминированный git state: либо `RELEASE_REF`, либо normal branch fast-forward path
+- делает `python3 -m compileall app scripts`
+- применяет `alembic upgrade head`
+- запускает `docker compose --env-file ... up --build -d --remove-orphans`
+- считает релиз успешным только после smoke-check `/health`
+- сохраняет previous/current git refs в `.release-backups/` для операционного разбора
+
+`scripts/deploy_as_tcf.sh` остаётся как короткий runtime update path, а `scripts/release_update.sh` — как основной безопасный релизный процесс.
+Подробности: `PRODUCTION_DEPLOY_BASELINE_V1.md`.
 
 ---
 
@@ -319,9 +412,23 @@ Worker:
 - обрабатывает `queued`, если `scheduled_for` уже наступил
 - отправляет публикации через выбранный publisher backend
 - не валит весь batch, если одна публикация падает
+- пишет machine-readable runtime state в `runtime/worker_status.json`
+- поддерживает healthcheck через `scripts/check_worker_status.py`
 
 Entry point:
 - `scripts/run_worker.py`
+
+Operational monitoring:
+- проверить локальный runtime status: `make worker-status`
+- compose healthcheck для `worker` использует `python3 scripts/check_worker_status.py`
+- в `runtime/worker_status.json` пишутся heartbeat, last_success, last_failure, consecutive_failures и summary последнего цикла
+
+Operational alerts baseline:
+- проверить API: `make api-status`
+- проверить bot: `make bot-status`
+- проверить агрегированные alerts: `make runtime-alerts`
+- `scripts/check_runtime_alerts.py` пишет сводку в `runtime/alerts_status.json`
+- compose healthcheck для `bot` использует `python3 scripts/check_bot_status.py`
 
 ---
 
@@ -379,13 +486,16 @@ make test
 Шаблон для боевого запуска.
 - копируй в **неотслеживаемый** файл, например `.env.live`
 - не коммить реальные токены
+- для production предпочитай `TELEGRAM_BOT_TOKEN_FILE`, а не inline token в env
 
 Recommended live flow:
 
 ```bash
 cp .env.live.example .env.live
-# fill secrets locally
-cp .env.live .env
+mkdir -p secrets
+cp secrets.example/telegram_bot_token.example secrets/telegram_bot_token
+# fill the real token in secrets/telegram_bot_token
+ENV_FILE=.env.live SECRET_FILES_DIR=./secrets docker compose up --build
 ```
 
 ---
@@ -402,10 +512,14 @@ cp .env.live .env
 - `ENV_MODES.md`
 - `STAGING_DEMO_RUNBOOK.md`
 - `FINAL_QA_RUNBOOK.md`
+- `OPERATOR_HANDBOOK.md`
+- `PRODUCTION_DEPLOY_BASELINE_V1.md`
+- `RELEASE_CHECKLIST.md`
 - `GO_NO_GO_CHECK.md`
 - `RELEASE_MANIFEST.md`
 - `RELEASE_SMOKE.md`
 - `STAGING_RELEASE_0.1.0-mvp.md`
+- `FIRST_USER_LAUNCH_PATH.md`
 - `TELEGRAM_UI_MAP_V1.md`
 - `TELEGRAM_CHANNEL_CONNECTION_UX_V1.md`
 - `MVP_CHECKLIST.md`
@@ -422,4 +536,17 @@ cp .env.live .env
 - deploy path есть
 - ключевые сценарии закреплены тестами
 
-Следующий слой работ — docs polish, staging/demo discipline, финальный QA и release packaging.
+Следующий слой работ — operator handbook, user-facing launch path и controlled user tests.
+
+Для controlled user tests подготовлены:
+- `CONTROLLED_USER_TEST_PLAN.md` — сценарий, критерии done и правила модерации
+- `CONTROLLED_USER_TEST_RESULTS_TEMPLATE.md` — шаблон записи результата по каждому участнику
+
+## Release decision practice
+
+Перед staging/live rollout используй связку:
+- `RELEASE_CHECKLIST.md` — обязательный операционный чеклист
+- `GO_NO_GO_CHECK.md` — policy принятия решения
+- `release_records/TEMPLATE.md` — шаблон записи конкретного релиза
+
+Правило: если нет заполненного release record с явным решением `GO`/`NO-GO`, релиз считается не прошедшим операционный gate.

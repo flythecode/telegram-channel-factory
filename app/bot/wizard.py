@@ -3,6 +3,18 @@ from dataclasses import dataclass, field
 from app.bot.keyboards import back_menu_keyboard, project_ready_keyboard
 
 
+CHANNEL_CREATION_GUIDE_TEXT = (
+    'Если канала ещё нет, создай его прямо в Telegram:\n\n'
+    '1. Открой Telegram → «Новый канал».\n'
+    '2. Задай название и описание.\n'
+    '3. Сделай канал публичным или сохрани invite link.\n'
+    '4. Добавь этого бота в администраторы.\n'
+    '5. Вернись сюда и пришли @username канала.\n\n'
+    'Когда канал уже создан — нажми «У меня уже есть канал».\n'
+    'Если канал публичный, пришли формат вроде @my_channel.'
+)
+
+
 @dataclass(slots=True)
 class ProjectWizardState:
     name: str | None = None
@@ -27,64 +39,81 @@ class ProjectWizardService:
     def start(self) -> WizardScreen:
         return WizardScreen(
             step='start',
-            text='Создадим проект канала шаг за шагом. Сначала задай название проекта.',
+            text=(
+                'Создадим проект канала шаг за шагом. '
+                'Я задам 6 коротких вопросов и после каждого шага покажу, что делать дальше.\n\n'
+                'Первое действие сейчас: нажми «Начать».'
+            ),
             buttons=[["Начать"], ["Главное меню"]],
         )
 
     def step_name(self) -> WizardScreen:
-        return WizardScreen(step='name', text='Шаг 1/6 — введи название проекта.', buttons=back_menu_keyboard())
+        return WizardScreen(
+            step='name',
+            text='Шаг 1/6 — напиши название проекта. Это внутреннее имя, его можно будет изменить позже.',
+            buttons=back_menu_keyboard(),
+        )
 
     def step_niche(self) -> WizardScreen:
         return WizardScreen(
             step='niche',
-            text='Шаг 2/6 — выбери нишу канала.',
+            text='Шаг 2/6 — выбери тему канала. Если вариант не подходит, нажми «Свой вариант» и продолжай.',
             buttons=[["AI", "Крипта"], ["Маркетинг", "Новости"], ["Свой вариант"], ["Назад"], ["Главное меню"]],
         )
 
     def step_language(self) -> WizardScreen:
         return WizardScreen(
             step='language',
-            text='Шаг 3/6 — выбери язык канала.',
+            text='Шаг 3/6 — выбери основной язык публикаций.',
             buttons=[["Русский", "English"], ["Назад"], ["Главное меню"]],
         )
 
     def step_goal(self) -> WizardScreen:
         return WizardScreen(
             step='goal',
-            text='Шаг 4/6 — выбери цель канала.',
+            text='Шаг 4/6 — выбери, зачем тебе канал. Это поможет подобрать подачу и будущий контент.',
             buttons=[["Личный бренд"], ["Трафик / лиды"], ["Экспертный контент"], ["Назад"], ["Главное меню"]],
         )
 
     def step_content_format(self) -> WizardScreen:
         return WizardScreen(
             step='content_format',
-            text='Шаг 5/6 — выбери формат контента.',
+            text='Шаг 5/6 — выбери формат, в котором тебе удобнее вести канал.',
             buttons=[["Короткие посты"], ["Аналитика"], ["Смешанный формат"], ["Назад"], ["Главное меню"]],
         )
 
     def step_posting_frequency(self) -> WizardScreen:
         return WizardScreen(
             step='posting_frequency',
-            text='Шаг 6/6 — выбери частоту публикаций.',
+            text='Шаг 6/6 — выбери желаемую частоту публикаций. Это ориентир, а не жёсткое ограничение.',
             buttons=[["Ежедневно"], ["2 раза в день"], ["Несколько раз в неделю"], ["Назад"], ["Главное меню"]],
         )
 
     def summary(self, state: ProjectWizardState) -> WizardScreen:
         text = (
-            'Проверь настройки проекта:\n'
+            'Проверь настройки проекта перед сохранением:\n'
             f'• Название: {state.name or "—"}\n'
             f'• Ниша: {state.niche or "—"}\n'
             f'• Язык: {state.language or "—"}\n'
             f'• Цель: {state.goal or "—"}\n'
             f'• Формат: {state.content_format or "—"}\n'
-            f'• Частота: {state.posting_frequency or "—"}'
+            f'• Частота: {state.posting_frequency or "—"}\n\n'
+            'Следующий шаг один: нажми «Подтвердить проект».\n'
+            'Если нужно что-то поменять, нажми «Назад» и поправь только нужный пункт.'
         )
         return WizardScreen(step='summary', text=text, buttons=[["Подтвердить проект"], ["Назад"], ["Главное меню"]])
 
     def preset_step(self) -> WizardScreen:
         return WizardScreen(
             step='preset',
-            text='Выбери команду агентов для канала.',
+            text=(
+                'Теперь выбери команду AI-агентов.\n\n'
+                '• 3 агента — самый простой и быстрый старт;\n'
+                '• 5 агентов — баланс скорости и качества;\n'
+                '• 7 агентов — больше редактуры и контроля.\n\n'
+                'Если хочешь пройти путь без лишних решений, нажми «3 агента — Быстрый старт». '
+                'Это рекомендуемый вариант для первого запуска.'
+            ),
             buttons=[["3 агента — Быстрый старт"], ["5 агентов — Сбалансировано"], ["7 агентов — Полная редакция"], ["Назад"], ["Главное меню"]],
         )
 
@@ -92,18 +121,23 @@ class ProjectWizardService:
         return WizardScreen(
             step='channel_connect',
             text=(
-                'Подключи Telegram-канал:\n'
-                '1. Добавь бота в админы канала.\n'
-                '2. Включи право на публикацию сообщений.\n'
-                '3. Пришли сюда @username канала или channel_id.\n'
-                '4. После этого нажми «Проверить подключение». '
+                'Осталось подключить твой Telegram-канал.\n\n'
+                'Самый короткий путь:\n'
+                '1. Нажми «У меня уже есть канал».\n'
+                '2. Открой настройки канала в Telegram.\n'
+                '3. Добавь этого бота в администраторы канала.\n'
+                '4. Выдай право на публикацию сообщений.\n'
+                '5. Пришли сюда @username канала.\n'
+                '6. Нажми «Проверить подключение».\n\n'
+                'Если канала ещё нет — нажми «Как создать канал».\n'
+                'Пример username: @my_channel'
             ),
-            buttons=[["Повторить инструкцию"], ["Проверить подключение"], ["Назад"], ["Главное меню"]],
+            buttons=[["У меня уже есть канал"], ["Как создать канал"], ["Проверить подключение"], ["Назад"], ["Главное меню"]],
         )
 
     def project_ready(self) -> WizardScreen:
         return WizardScreen(
             step='project_ready',
-            text='Проект готов. Можно перейти к рабочим действиям.',
+            text='Проект готов. Следующий шаг один: нажми «Создать контент-план». После этого я проведу к идеям и первым черновикам.',
             buttons=project_ready_keyboard(),
         )

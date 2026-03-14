@@ -118,8 +118,17 @@ APP_ENV=prod
 DEBUG=false
 RUNTIME_MODE=live
 PUBLISHER_BACKEND=telegram
-TELEGRAM_BOT_TOKEN=REPLACE_WITH_REAL_TOKEN
+TELEGRAM_BOT_TOKEN_FILE=/run/secrets/tcf/telegram_bot_token
+TELEGRAM_BOT_TOKEN=
 DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/tcf
+```
+
+Создай отдельный secret file:
+
+```bash
+mkdir -p secrets
+cp secrets.example/telegram_bot_token.example secrets/telegram_bot_token
+# fill the real token in secrets/telegram_bot_token
 ```
 
 ### Step 2 — подставь env
@@ -157,15 +166,19 @@ python3 scripts/run_bot.py
 Если бот запускается через compose:
 
 ```bash
-cp .env.example .env
-docker compose up --build
+cp .env.live.example .env.live
+mkdir -p secrets
+cp secrets.example/telegram_bot_token.example secrets/telegram_bot_token
+# fill the real token in secrets/telegram_bot_token
+ENV_FILE=.env.live SECRET_FILES_DIR=./secrets docker compose up --build
 ```
 
 Сервис `bot` поднимется автоматически.
 
 Важно:
-- для настоящего live-запуска compose должен получать **реальный** `TELEGRAM_BOT_TOKEN`
-- безопаснее всего делать это через локальный `.env`, собранный из `.env.live`
+- для настоящего live-запуска compose должен получать **реальный** token через `TELEGRAM_BOT_TOKEN_FILE`
+- безопаснее всего держать token в `./secrets/telegram_bot_token`, а env — в неотслеживаемом `.env.live`
+- compose теперь поддерживает `ENV_FILE` и `SECRET_FILES_DIR`, чтобы не копировать live env поверх рабочего `.env`
 - внутри compose `DATABASE_URL` переопределяется на контейнерный адрес `db:5432`
 
 Проверить логи бота:
@@ -214,7 +227,8 @@ docker compose logs -f bot
 
 Что делать:
 - проверить `.env`
-- проверить, что `TELEGRAM_BOT_TOKEN` реально заполнен
+- проверить, что secret file по пути из `TELEGRAM_BOT_TOKEN_FILE` существует и содержит актуальный токен
+- если токен когда-либо светился в shell history, demo/live файлах, логах или скриншотах — перевыпустить его у BotFather и обновить secret file
 
 ### Problem: `RUNTIME_MODE=live requires PUBLISHER_BACKEND=telegram`
 Причина:

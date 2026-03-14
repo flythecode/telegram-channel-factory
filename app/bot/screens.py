@@ -54,18 +54,31 @@ def channels_list_screen(channels: list[ChannelSummary]):
                 'Мои каналы\n'
                 'У тебя пока нет каналов или подключённых проектов.\n\n'
                 'Что можно сделать дальше:\n'
-                '• создать первый проект канала\n'
-                '• вернуться в главное меню'
+                '• Следующий шаг один: нажми «Создать канал».\n'
+                '• Я проведу тебя через запуск, подключение и первые публикации без ручного поиска по меню.'
             ),
             'buttons': [['Создать канал'], ['Главное меню']],
         }
     buttons = [[channel.title] for channel in channels]
     buttons += [['Создать канал'], ['Главное меню']]
-    return {'text': 'Мои каналы', 'buttons': buttons}
+    return {
+        'text': (
+            'Мои каналы\n'
+            'Открой нужный канал кнопкой ниже — я верну тебя прямо в рабочую точку проекта.\n\n'
+            'Если хочешь запустить новый канал отдельно, нажми «Создать канал». '
+            'Разработчик для этого пути не нужен.'
+        ),
+        'buttons': buttons,
+    }
 
 
 
 def channel_dashboard_screen(title: str, mode: str, agents_count: int, content_plans_count: int = 0, drafts_count: int = 0) -> dict:
+    next_step = 'Следующий шаг: открой «Контент-план», чтобы запустить первый рабочий цикл.'
+    if content_plans_count > 0 and drafts_count == 0:
+        next_step = 'Следующий шаг: открой «Контент-план» и сгенерируй идеи или первые черновики.'
+    elif drafts_count > 0:
+        next_step = 'Следующий шаг: открой «Черновики» и выбери текст, который хочешь проверить или опубликовать.'
     return {
         'text': (
             f'Канал: {title}\n'
@@ -73,7 +86,8 @@ def channel_dashboard_screen(title: str, mode: str, agents_count: int, content_p
             f'Агентов: {agents_count}\n'
             f'Контент-планов: {content_plans_count}\n'
             f'Черновиков: {drafts_count}\n\n'
-            'Открой нужный раздел ниже: настройки, команда, черновики, публикации или режим работы.'
+            f'{next_step}\n'
+            'Остальные разделы ниже нужны, когда захочешь изменить настройки, команду, публикации или режим работы.'
         ),
         'buttons': [
             ['Настройки'],
@@ -101,7 +115,9 @@ def channel_settings_screen(project_name: str, topic: str | None, language: str,
         f'Язык: {language}\n'
         f'Формат: {content_format or "—"}\n'
         f'Частота: {posting_frequency or "—"}\n'
-        f'Режим проекта: {operation_mode}'
+        f'Режим проекта: {operation_mode}\n\n'
+        'Если настройки выглядят нормально, следующий рабочий шаг — вернуться в «Контент-план» или «Черновики». '
+        'Этот экран нужен только для проверки текущей конфигурации.'
     )
     return section_screen('Настройки канала', body)
 
@@ -111,10 +127,11 @@ def channel_agents_screen(agents: list[AgentSummary]) -> dict:
     if not agents:
         body = (
             'Агенты пока не настроены.\n\n'
-            'Когда команда агентов будет собрана, здесь появятся роли, модели и статус каждого участника.'
+            'Когда команда агентов будет собрана, здесь появятся роли, модели и статус каждого участника.\n'
+            'Если ты уже создал проект, вернись назад и пройди рекомендуемый пресет — это самый короткий путь.'
         )
     else:
-        lines = [f'Всего агентов: {len(agents)}', '']
+        lines = [f'Всего агентов: {len(agents)}', '', 'Команда собрана. Дополнительных действий здесь не нужно.', 'Следующий рабочий шаг: вернись в «Контент-план» и запусти идеи или черновики.', '']
         for agent in agents:
             state = 'включён' if agent.enabled else 'выключен'
             lines.append(f'• {agent.name} — {agent.role} / {agent.model} / {state}')
@@ -127,14 +144,18 @@ def channel_content_plan_screen(plans: list[ContentPlanSummary], tasks_total: in
     if not plans:
         body = (
             'Контент-планов пока нет.\n\n'
-            'Сначала сгенерируй идеи или создай первый план, чтобы увидеть здесь периоды и задачи.'
+            'Следующий шаг: нажми «Создать контент-план».\n'
+            'Сначала сгенерируй идеи или создай первый план, чтобы увидеть здесь периоды и задачи.\n'
+            'После этого я помогу перейти к первым черновикам.'
         )
+        buttons = [['Создать контент-план'], ['Сгенерировать 10 идей'], ['Назад'], ['Главное меню']]
     else:
-        lines = [f'Планов: {len(plans)}', f'Всего задач: {tasks_total}', '']
+        lines = [f'Планов: {len(plans)}', f'Всего задач: {tasks_total}', '', 'Следующий шаг: сгенерируй идеи или сразу создай первые 3 черновика.', '']
         for plan in plans[:5]:
             lines.append(f'• {plan.period} / {plan.date_range} / {plan.status} / задач: {plan.tasks_count}')
         body = '\n'.join(lines)
-    return section_screen('Контент-план', body)
+        buttons = [['Сгенерировать 10 идей'], ['Создать 3 черновика'], ['Назад'], ['Главное меню']]
+    return section_screen('Контент-план', body, buttons=buttons)
 
 
 
@@ -142,11 +163,12 @@ def channel_drafts_screen(drafts: list[DraftSummary]) -> dict:
     if not drafts:
         body = (
             'Черновиков пока нет.\n\n'
-            'Как только появятся задачи и генерация контента, здесь будут лежать все новые и отредактированные черновики.'
+            'Следующий шаг один: нажми «Создать 3 черновика».\n'
+            'Как только генерация завершится, вернись сюда и открой нужный текст для проверки — здесь будут лежать все новые и отредактированные черновики.'
         )
-        buttons = back_menu_keyboard()
+        buttons = [['Создать 3 черновика'], ['Назад'], ['Главное меню']]
     else:
-        lines = [f'Черновиков: {len(drafts)}', '', 'Открой нужный черновик кнопкой ниже:']
+        lines = [f'Черновиков: {len(drafts)}', '', 'Следующий шаг один: открой нужный черновик кнопкой ниже.', '']
         buttons = []
         for draft in drafts[:7]:
             lines.append(f'• {draft.title} / {human_draft_status(draft.status)} / v{draft.version}')
@@ -170,9 +192,9 @@ def draft_detail_screen(title: str, status: str, version: int, text: str, create
         'Черновик',
         body,
         buttons=[
-            ['Approve', 'Reject'],
-            ['Edit draft', 'Regenerate'],
-            ['Create publication'],
+            ['Подтвердить', 'Отклонить'],
+            ['Редактировать', 'Пересобрать'],
+            ['Создать публикацию'],
             ['Черновики'],
             ['Главное меню'],
         ],
@@ -184,10 +206,10 @@ def publications_screen(publications: list[PublicationSummary]) -> dict:
     if not publications:
         return section_screen(
             'Публикации',
-            'Публикаций пока нет.\n\nКогда из черновика будет создан пост, здесь появятся очередь, расписание и статус отправки.'
+            'Публикаций пока нет.\n\nСледующий шаг один: открой любой готовый черновик и нажми «Создать публикацию». После этого здесь появятся очередь, расписание и статус отправки.'
         )
 
-    lines = [f'Публикаций: {len(publications)}', '']
+    lines = [f'Публикаций: {len(publications)}', '', 'Следующий шаг один: открой нужную публикацию кнопкой ниже, чтобы отправить её сейчас или поставить в расписание.', '']
     buttons: list[list[str]] = []
     for publication in publications[:7]:
         schedule = format_schedule(publication.scheduled_for)
@@ -203,7 +225,7 @@ def publication_detail_screen(title: str, status: str, scheduled_for: str | None
     error_block = human_publication_error(error_message)
     next_step = ''
     if classification == 'temporary':
-        next_step = '\nСледующее действие: подожди и попробуй Publish now ещё раз или переставь публикацию по времени.'
+        next_step = '\nСледующее действие: подожди и попробуй «Опубликовать сейчас» ещё раз или переставь публикацию по времени.'
     elif classification == 'terminal':
         next_step = '\nСледующее действие: проверь права бота, канал и конфиг подключения перед повторной попыткой.'
 
@@ -218,8 +240,8 @@ def publication_detail_screen(title: str, status: str, scheduled_for: str | None
         'Публикация',
         body,
         buttons=[
-            ['Publish now', 'Schedule publication'],
-            ['Cancel publication'],
+            ['Опубликовать сейчас', 'Запланировать'],
+            ['Отменить публикацию'],
             ['Публикации'],
             ['Главное меню'],
         ],
@@ -230,17 +252,17 @@ def publication_detail_screen(title: str, status: str, scheduled_for: str | None
 def mode_screen(current_mode: str) -> dict:
     body = (
         f'Текущий режим канала: {human_mode_label(current_mode)}\n\n'
-        'manual — пользователь подтверждает ключевые шаги вручную\n'
-        'semi_auto — бот ведёт очередь и scheduled-публикации, но важные решения остаются у пользователя\n'
-        'auto — канал работает максимально автоматически'
+        'Ручной — пользователь подтверждает ключевые шаги вручную\n'
+        'Ассистент — бот ведёт очередь и публикации по расписанию, но важные решения остаются у пользователя\n'
+        'Авто — канал работает максимально автоматически'
     )
     return section_screen(
         'Режим работы',
         body,
         buttons=[
-            ['Mode: manual'],
-            ['Mode: semi_auto'],
-            ['Mode: auto'],
+            ['Режим: ручной'],
+            ['Режим: ассистент'],
+            ['Режим: авто'],
             ['Назад'],
             ['Главное меню'],
         ],

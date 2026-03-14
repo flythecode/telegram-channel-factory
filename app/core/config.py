@@ -1,4 +1,6 @@
-from pydantic import field_validator
+from pathlib import Path
+
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,6 +18,7 @@ class Settings(BaseSettings):
     runtime_mode: str = "stub"
     publisher_backend: str = "stub"
     telegram_bot_token: str | None = None
+    telegram_bot_token_file: str | None = None
     telegram_request_timeout_seconds: int = 20
 
     worker_poll_interval_seconds: int = 5
@@ -45,6 +48,19 @@ class Settings(BaseSettings):
             raise ValueError(f"PUBLISHER_BACKEND must be one of: {', '.join(sorted(allowed))}")
         return value
 
+    @model_validator(mode="after")
+    def load_secret_files(self):
+        if not self.telegram_bot_token and self.telegram_bot_token_file:
+            token_path = Path(self.telegram_bot_token_file)
+            if not token_path.is_file():
+                raise ValueError("TELEGRAM_BOT_TOKEN_FILE must point to an existing file")
+            self.telegram_bot_token = token_path.read_text(encoding="utf-8").strip()
+
+        if self.telegram_bot_token is not None:
+            self.telegram_bot_token = self.telegram_bot_token.strip() or None
+
+        return self
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
@@ -58,4 +74,4 @@ elif settings.runtime_mode == "live":
     if settings.publisher_backend != "telegram":
         raise ValueError("RUNTIME_MODE=live requires PUBLISHER_BACKEND=telegram")
     if not settings.telegram_bot_token:
-        raise ValueError("RUNTIME_MODE=live requires TELEGRAM_BOT_TOKEN")
+        raise ValueError("RUNTIME_MODE=live requires TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN_FILE")

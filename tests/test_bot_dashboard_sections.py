@@ -56,6 +56,6 @@ def test_dashboard_sections_are_backed_by_real_project_data(fake_db, monkeypatch
     drafts = channel_drafts_screen_from_backend(identity, chat_id)
     assert 'Черновиков: 1' in drafts.text
     assert 'Разбор рынка' in drafts.text
-    assert 'created' in drafts.text
+    assert 'Новый черновик' in drafts.text
 
     assert session_store.get_meta(chat_id, 'channel_title') == 'Alpha Channel'

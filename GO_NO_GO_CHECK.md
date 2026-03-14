@@ -1,6 +1,11 @@
 # Telegram Channel Factory — MVP Go / No-Go Check
 
-Этот документ фиксирует **финальную оценку готовности MVP** перед staging release.
+Этот документ фиксирует **правило принятия решения GO / NO-GO**.
+
+Важно:
+- `GO_NO_GO_CHECK.md` задаёт сами правила решения
+- `RELEASE_CHECKLIST.md` задаёт обязательный операционный процесс перед rollout
+- `release_records/YYYY-MM-DD-<release-marker>.md` — место, где фиксируется решение по конкретному релизу
 
 Цель документа:
 - не гадать “ну вроде уже можно”
@@ -287,16 +292,22 @@
 
 ---
 
-## 7. Final recommendation
+## 7. How this becomes an operational decision
+
+Перед любым staging/live rollout оператор обязан:
+1. создать конкретный `release_records/YYYY-MM-DD-<release-marker>.md`
+2. пройти `RELEASE_CHECKLIST.md`
+3. приложить evidence из `FINAL_QA_RUNBOOK.md` или staging run
+4. письменно зафиксировать итоговый `GO` или `NO-GO`
+
+Без release record решение считается **непринятым**, даже если команда «и так уверена».
+
+## 8. Final recommendation
 
 ### Recommendation
-- **Proceed to task 84: first staging release**
-
-### What to validate there
-- поднятие staging-like окружения
-- основной MVP path
-- post-setup editing path
-- отсутствие launch-blocking failures
+- использовать этот документ как policy для решения
+- использовать `RELEASE_CHECKLIST.md` как обязательный execution gate
+- использовать `release_records/` как журнал реальных решений
 
 ### If staging passes
 - решение можно повышать до более уверенного **GO**

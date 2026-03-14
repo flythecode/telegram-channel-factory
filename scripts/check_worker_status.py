@@ -1,0 +1,51 @@
+import json
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+STATE_PATH = ROOT / 'runtime' / 'worker_status.json'
+MAX_HEARTBEAT_AGE_SECONDS = 60
+
+
+
+def parse_iso(raw: str | None):
+    if not raw:
+        return None
+    return datetime.fromisoformat(raw)
+
+
+
+def main() -> int:
+    if not STATE_PATH.exists():
+        print(f'worker status file missing: {STATE_PATH}')
+        return 1
+
+    payload = json.loads(STATE_PATH.read_text(encoding='utf-8'))
+    heartbeat = parse_iso(payload.get('last_heartbeat_at'))
+    if heartbeat is None:
+        print('worker heartbeat missing')
+        return 1
+
+    age_seconds = (datetime.now(timezone.utc) - heartbeat).total_seconds()
+    status = payload.get('status')
+    if status not in {'running', 'starting'}:
+        print(f'worker unhealthy: status={status} last_error={payload.get("last_error")}')
+        return 1
+    if age_seconds > MAX_HEARTBEAT_AGE_SECONDS:
+        print(f'worker heartbeat stale: age_seconds={round(age_seconds, 2)}')
+        return 1
+
+    summary = payload.get('last_summary') or {}
+    print(
+        'worker healthy '
+        f'status={status} '
+        f'age_seconds={round(age_seconds, 2)} '
+        f'processed={summary.get("processed", 0)} '
+        f'failed={summary.get("failed", 0)}'
+    )
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

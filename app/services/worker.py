@@ -1,5 +1,7 @@
 import logging
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+from time import perf_counter
 
 from sqlalchemy.orm import Session
 
@@ -11,6 +13,20 @@ from app.services.runtime_hardening import (
 from app.utils.enums import PublicationStatus
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(slots=True)
+class WorkerBatchSummary:
+    seen: int
+    dispatchable: int
+    processed: int
+    failed: int
+    started_at: str
+    finished_at: str
+    duration_ms: float
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 
@@ -36,9 +52,17 @@ def collect_dispatchable_publications(db: Session) -> list[Publication]:
 
 
 def process_publication_batch(db: Session) -> int:
+    return process_publication_batch_with_summary(db).processed
+
+
+
+def process_publication_batch_with_summary(db: Session) -> WorkerBatchSummary:
+    started_at = datetime.now(timezone.utc)
+    started_perf = perf_counter()
+    dispatchable_items = collect_dispatchable_publications(db)
     processed = 0
     failed = 0
-    for publication in collect_dispatchable_publications(db):
+    for publication in dispatchable_items:
         logger.info(
             "worker processing publication",
             extra={
@@ -59,5 +83,15 @@ def process_publication_batch(db: Session) -> int:
                     "error": str(exc),
                 },
             )
-    logger.info("worker batch complete", extra={"processed": processed, "failed": failed})
-    return processed
+    finished_at = datetime.now(timezone.utc)
+    summary = WorkerBatchSummary(
+        seen=len(db.query(Publication).all()),
+        dispatchable=len(dispatchable_items),
+        processed=processed,
+        failed=failed,
+        started_at=started_at.isoformat(),
+        finished_at=finished_at.isoformat(),
+        duration_ms=round((perf_counter() - started_perf) * 1000, 2),
+    )
+    logger.info("worker batch complete", extra=summary.to_dict())
+    return summary

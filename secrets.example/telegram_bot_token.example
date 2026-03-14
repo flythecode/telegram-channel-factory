@@ -1,0 +1,4 @@
+# Put the real Telegram bot token here in the real untracked secrets directory.
+# Example target path on server: /etc/telegram-channel-factory/secrets/telegram_bot_token
+# Example local path (ignored by git): ./secrets/telegram_bot_token
+123456:replace-me

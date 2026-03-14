@@ -51,8 +51,16 @@ def test_main_menu_contains_core_entries():
 
 def test_how_it_works_and_help_screens_exist():
     service = BotService()
-    assert 'Создай проект канала' in service.how_it_works_screen().text
-    assert 'Бот помогает' in service.help_screen().text
+    assert 'Нажми «Создать канал»' in service.how_it_works_screen().text
+    assert 'С чем я помогаю' in service.help_screen().text
+
+
+
+def test_start_and_project_ready_screens_highlight_single_next_step():
+    service = BotService()
+    assert 'Я буду подсказывать только следующий нужный шаг' in service.start_screen().text
+    assert 'Следующий шаг один' in service.project_ready_screen().text
+    assert 'без участия разработчика' in service.my_channels_empty_screen().text
 
 
 
@@ -81,10 +89,10 @@ def test_resolve_screen_for_text_routes_main_menu_and_wizard_entry():
     assert 'Шаг 1/6' in name_step.text
 
     help_screen = resolve_screen_for_text('Помощь')
-    assert 'Бот помогает' in help_screen.text
+    assert 'С чем я помогаю' in help_screen.text
 
     back = resolve_screen_for_text('Назад')
-    assert 'Telegram Channel Factory помогает' in back.text
+    assert 'Помогаю запустить Telegram-канал' in back.text
 
 
 
@@ -125,13 +133,15 @@ def test_resolve_screen_for_text_walks_through_stateful_wizard_steps():
     assert session_store.get_state(chat_id).posting_frequency == 'Ежедневно'
 
     preset = resolve_screen_for_text('Подтвердить проект', chat_id=chat_id)
-    assert 'Выбери команду агентов' in preset.text
+    assert 'выбери команду ai-агентов' in preset.text.lower()
 
     connection = resolve_screen_for_text('3 агента — Быстрый старт', chat_id=chat_id)
-    assert 'Подключи Telegram-канал' in connection.text
+    assert 'Осталось подключить твой Telegram-канал' in connection.text
+    assert connection.buttons[0][0] == 'У меня уже есть канал'
 
     saved_channel = resolve_screen_for_text('@alpha_channel', chat_id=chat_id)
     assert 'Канал для подключения сохранён: @alpha_channel' in saved_channel.text
+    assert 'Следующий шаг один' in saved_channel.text
 
     ready = resolve_screen_for_text('Проверить подключение', chat_id=chat_id)
     assert 'Канал подключён' in ready.text or 'Сначала пришли @username' in ready.text
@@ -199,7 +209,7 @@ def test_preset_selection_applies_agents_and_stores_preset_meta(monkeypatch):
     )
 
     assert 'Команда агентов применена: 3.' in screen.text
-    assert 'Подключи Telegram-канал' in screen.text
+    assert 'Осталось подключить твой Telegram-канал' in screen.text
     assert calls == {'chat_id': 100, 'identity': 'tg-2', 'preset_label': '3 агента — Быстрый старт'}
     assert session_store.get_meta(chat_id, 'preset_code') == 'starter_3'
     assert session_store.get_meta(chat_id, 'agents_count') == '3'
@@ -213,8 +223,15 @@ def test_channel_connect_flow_accepts_channel_ref_and_checks_connection(monkeypa
     session_store.set_step(chat_id, 'channel_connect')
     session_store.set_meta(chat_id, 'project_id', 'project-555')
 
+    existing_channel = resolve_screen_for_text('У меня уже есть канал', chat_id=chat_id)
+    assert 'Теперь сделай только три действия' in existing_channel.text
+
+    guide = resolve_screen_for_text('Как создать канал', chat_id=chat_id)
+    assert 'Если канала ещё нет' in guide.text
+
     saved = resolve_screen_for_text('@muhatest777', chat_id=chat_id)
     assert 'Канал для подключения сохранён: @muhatest777' in saved.text
+    assert 'Следующий шаг один' in saved.text
     assert session_store.get_state(chat_id).channel_ref == '@muhatest777'
 
     calls = {}
@@ -255,6 +272,7 @@ def test_my_channels_and_open_channel_dashboard_are_backed_by_bridge(fake_db, mo
 
     channels_screen = my_channels_screen_from_backend(identity)
     assert 'Мои каналы' in channels_screen.text
+    assert 'верну тебя прямо в рабочую точку проекта' in channels_screen.text
     flat = [item for row in channels_screen.buttons for item in row]
     assert 'Alpha Channel' in flat
 
@@ -264,6 +282,7 @@ def test_my_channels_and_open_channel_dashboard_are_backed_by_bridge(fake_db, mo
     assert 'Агентов: 3' in dashboard.text
     assert 'Контент-планов: 1' in dashboard.text
     assert 'Черновиков: 1' in dashboard.text
+    assert 'Следующий шаг: открой «Черновики»' in dashboard.text
     assert session_store.get_meta(777, 'channel_title') == 'Alpha Channel'
 
 
@@ -296,11 +315,13 @@ def test_dashboard_sections_are_backed_by_real_data(fake_db, monkeypatch):
     assert settings_screen is not None
     assert 'Проект: Beta Channel' in settings_screen.text
     assert 'Формат: Аналитика' in settings_screen.text
+    assert 'следующий рабочий шаг' in settings_screen.text.lower()
 
     agents_screen = channel_agents_screen_from_backend(identity, 555)
     assert agents_screen is not None
     assert 'Всего агентов: 3' in agents_screen.text
     assert 'strategist' in agents_screen.text
+    assert 'Следующий рабочий шаг' in agents_screen.text
 
     plan_screen = channel_content_plan_screen_from_backend(identity, 555)
     assert plan_screen is not None
@@ -368,7 +389,7 @@ def test_draft_detail_publications_and_modes_are_backed_by_real_data(fake_db, mo
     updated_mode = change_channel_mode_from_backend(identity, 556, 'auto')
     assert updated_mode is not None
     assert 'Режим обновлён.' in updated_mode.text
-    assert 'auto' in updated_mode.text
+    assert 'Авто' in updated_mode.text
     assert 'максимум автоматизации' in updated_mode.text
 
 
@@ -403,11 +424,11 @@ def test_resolve_screen_for_text_opens_backend_backed_dashboard_sections(fake_db
     assert 'Черновик' in draft_detail.text
     assert 'Gamma body' in draft_detail.text
 
-    approve = resolve_screen_for_text('Approve', chat_id=888, identity=identity)
+    approve = resolve_screen_for_text('Подтвердить', chat_id=888, identity=identity)
     assert 'Черновик подтверждён.' in approve.text
     assert 'Статус: Подтверждён' in approve.text
 
-    create_pub = resolve_screen_for_text('Create publication', chat_id=888, identity=identity)
+    create_pub = resolve_screen_for_text('Создать публикацию', chat_id=888, identity=identity)
     assert 'Публикация создана.' in create_pub.text
 
     pubs = resolve_screen_for_text('Публикации', chat_id=888, identity=identity)
@@ -416,9 +437,9 @@ def test_resolve_screen_for_text_opens_backend_backed_dashboard_sections(fake_db
     mode = resolve_screen_for_text('Режим работы', chat_id=888, identity=identity)
     assert 'Текущий режим канала' in mode.text
 
-    auto = resolve_screen_for_text('Mode: auto', chat_id=888, identity=identity)
+    auto = resolve_screen_for_text('Режим: авто', chat_id=888, identity=identity)
     assert 'Режим обновлён.' in auto.text
-    assert 'auto' in auto.text
+    assert 'Авто' in auto.text
 
 
 
@@ -509,7 +530,7 @@ def test_main_menu_keeps_project_context_for_reopen(fake_db, monkeypatch):
     session_store.set_step(1201, 'channel_dashboard')
 
     menu = resolve_screen_for_text('Главное меню', chat_id=1201, identity=identity)
-    assert 'Telegram Channel Factory помогает' in menu.text
+    assert 'Помогаю запустить Telegram-канал' in menu.text
     assert session_store.get_meta(1201, 'project_id') == str(project.id)
 
     reopened = resolve_screen_for_text('Открыть проект', chat_id=1201, identity=identity)
@@ -588,9 +609,112 @@ def test_create_publication_shows_human_error_for_unapproved_draft(fake_db, monk
     session_store.set_meta(1400, 'channel_id', str(channel.id))
     session_store.set_meta(1400, 'draft_id', str(draft.id))
 
-    screen = resolve_screen_for_text('Create publication', chat_id=1400, identity=identity)
+    screen = resolve_screen_for_text('Создать публикацию', chat_id=1400, identity=identity)
     assert 'Не получилось выполнить действие' in screen.text
-    assert 'Сначала открой его и нажми Approve' in screen.text
+    assert 'Сначала открой его и нажми «Подтвердить»' in screen.text
+
+
+
+def test_full_manual_ui_only_e2e_flow_is_now_reachable(fake_db, monkeypatch):
+    monkeypatch.setattr('app.bot.app.SessionLocal', lambda: fake_db)
+
+    identity = TelegramIdentity(telegram_user_id='tg-ui-e2e', telegram_username='uie2e')
+    chat_id = 1500
+
+    assert 'Помогаю запустить Telegram-канал' in resolve_screen_for_text('/start', chat_id=chat_id, identity=identity).text
+    assert 'Создадим проект канала' in resolve_screen_for_text('Создать канал', chat_id=chat_id, identity=identity).text
+    assert 'Шаг 1/6' in resolve_screen_for_text('Начать', chat_id=chat_id, identity=identity).text
+    assert 'Шаг 2/6' in resolve_screen_for_text('Alpha Factory', chat_id=chat_id, identity=identity).text
+    resolve_screen_for_text('AI', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Русский', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Экспертный контент', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Аналитика', chat_id=chat_id, identity=identity)
+    summary = resolve_screen_for_text('Ежедневно', chat_id=chat_id, identity=identity)
+    assert 'Alpha Factory' in summary.text
+
+    preset = resolve_screen_for_text('Подтвердить проект', chat_id=chat_id, identity=identity)
+    assert 'Проект создан' in preset.text
+    connected = resolve_screen_for_text('3 агента — Быстрый старт', chat_id=chat_id, identity=identity)
+    assert 'Открой настройки канала в Telegram' in connected.text
+    resolve_screen_for_text('@alpha_factory', chat_id=chat_id, identity=identity)
+    ready = resolve_screen_for_text('Проверить подключение', chat_id=chat_id, identity=identity)
+    assert 'Канал подключён' in ready.text
+
+    dashboard = resolve_screen_for_text('Открыть проект', chat_id=chat_id, identity=identity)
+    assert 'Канал: @alpha_factory' in dashboard.text
+
+    plan_created = resolve_screen_for_text('Создать контент-план', chat_id=chat_id, identity=identity)
+    assert 'Контент-план создан.' in plan_created.text
+    assert 'Следующий шаг один: нажми «Сгенерировать 10 идей».' in plan_created.text
+
+    ideas = resolve_screen_for_text('Сгенерировать 10 идей', chat_id=chat_id, identity=identity)
+    assert '10 идей готовы.' in ideas.text
+    assert 'Следующий шаг один: нажми «Создать 3 черновика».' in ideas.text
+
+    drafts_created = resolve_screen_for_text('Создать 3 черновика', chat_id=chat_id, identity=identity)
+    assert '3 черновика готовы.' in drafts_created.text
+    assert 'Следующий шаг один: нажми «Черновики»' in drafts_created.text
+
+    drafts = resolve_screen_for_text('Черновики', chat_id=chat_id, identity=identity)
+    assert 'Черновиков:' in drafts.text
+    first_draft_title = next(button[0] for button in drafts.buttons if button[0] not in {'Назад', 'Главное меню'})
+
+    draft_detail = resolve_screen_for_text(first_draft_title, chat_id=chat_id, identity=identity)
+    assert 'Черновик' in draft_detail.text
+    edited = resolve_screen_for_text('Редактировать', chat_id=chat_id, identity=identity)
+    assert 'Пришли новый текст черновика' in edited.text
+    edited_done = resolve_screen_for_text('Обновлённый текст черновика для UI e2e', chat_id=chat_id, identity=identity)
+    assert 'Черновик обновлён.' in edited_done.text
+    approved = resolve_screen_for_text('Подтвердить', chat_id=chat_id, identity=identity)
+    assert 'Черновик подтверждён.' in approved.text
+
+    created_publication = resolve_screen_for_text('Создать публикацию', chat_id=chat_id, identity=identity)
+    assert 'Публикация создана.' in created_publication.text
+    publications = resolve_screen_for_text('Публикации', chat_id=chat_id, identity=identity)
+    assert 'Публикаций: 1' in publications.text
+
+    reopened_from_list = resolve_screen_for_text('Мои каналы', chat_id=chat_id, identity=identity)
+    assert '@alpha_factory' in [item for row in reopened_from_list.buttons for item in row]
+    reopened_project = resolve_screen_for_text('Alpha Factory', chat_id=chat_id, identity=identity)
+    assert 'Канал: @alpha_factory' in reopened_project.text
+
+
+def test_double_tap_create_publication_does_not_create_duplicate(fake_db, monkeypatch):
+    monkeypatch.setattr('app.bot.app.SessionLocal', lambda: fake_db)
+
+    identity = TelegramIdentity(telegram_user_id='tg-double-publication', telegram_username='doublepub')
+    chat_id = 1401
+
+    resolve_screen_for_text('/start', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Создать канал', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Начать', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Double Tap Factory', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('AI', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Русский', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Экспертный контент', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Аналитика', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Ежедневно', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Подтвердить проект', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('3 агента — Быстрый старт', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('@doubletap_factory', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Проверить подключение', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Создать контент-план', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Сгенерировать 10 идей', chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Создать 3 черновика', chat_id=chat_id, identity=identity)
+
+    drafts = resolve_screen_for_text('Черновики', chat_id=chat_id, identity=identity)
+    first_draft_title = next(button[0] for button in drafts.buttons if button[0] not in {'Назад', 'Главное меню'})
+    resolve_screen_for_text(first_draft_title, chat_id=chat_id, identity=identity)
+    resolve_screen_for_text('Подтвердить', chat_id=chat_id, identity=identity)
+
+    first = resolve_screen_for_text('Создать публикацию', chat_id=chat_id, identity=identity)
+    second = resolve_screen_for_text('Создать публикацию', chat_id=chat_id, identity=identity)
+
+    assert 'Публикация создана.' in first.text
+    assert 'Публикация создана.' in second.text
+
+    publications = resolve_screen_for_text('Публикации', chat_id=chat_id, identity=identity)
+    assert 'Публикаций: 1' in publications.text
 
 
 
@@ -600,7 +724,7 @@ def test_mode_change_shows_human_error_when_channel_missing(fake_db, monkeypatch
     identity = TelegramIdentity(telegram_user_id='tg-error-2', telegram_username='err2')
     session_store.set_meta(1401, 'channel_id', 'missing-channel-id')
 
-    screen = resolve_screen_for_text('Mode: auto', chat_id=1401, identity=identity)
+    screen = resolve_screen_for_text('Режим: авто', chat_id=1401, identity=identity)
     assert 'Не получилось выполнить действие' in screen.text
     assert 'Канал не найден' in screen.text
 
@@ -613,7 +737,7 @@ def test_unmatched_input_logs_diagnostic_and_fallback_to_main_menu(caplog):
     with caplog.at_level(logging.INFO):
         screen = resolve_screen_for_text('какая-то неизвестная команда', chat_id=chat_id)
 
-    assert 'Telegram Channel Factory помогает' in screen.text
+    assert 'Помогаю запустить Telegram-канал' in screen.text
 
     diagnostics = [record for record in caplog.records if record.message == 'bot diagnostic']
     assert diagnostics
@@ -657,7 +781,7 @@ def test_temporary_telegram_error_is_humanized_for_user(fake_db, monkeypatch):
 
     monkeypatch.setattr('app.bot.app.change_channel_mode_from_backend', _boom)
 
-    screen = resolve_screen_for_text('Mode: auto', chat_id=1402, identity=identity)
+    screen = resolve_screen_for_text('Режим: авто', chat_id=1402, identity=identity)
     assert 'Не получилось выполнить действие' in screen.text
     assert 'Telegram временно ограничил запросы' in screen.text
     assert 'Что делать: повторить попытку позже' in screen.text
@@ -673,7 +797,7 @@ def test_publication_detail_screen_humanizes_temporary_error_with_retry_hint():
     )
 
     assert 'Временная ошибка Telegram/сети' in screen['text']
-    assert 'Следующее действие: подожди и попробуй Publish now ещё раз' in screen['text']
+    assert 'Следующее действие: подожди и попробуй «Опубликовать сейчас» ещё раз' in screen['text']
 
 
 
@@ -766,9 +890,9 @@ def test_publication_flow_emits_flow_events(fake_db, monkeypatch, caplog):
     session_store.set_step(1602, 'draft_detail')
 
     with caplog.at_level(logging.INFO):
-        resolve_screen_for_text('Approve', chat_id=1602, identity=identity)
-        resolve_screen_for_text('Create publication', chat_id=1602, identity=identity)
-        resolve_screen_for_text('Publish now', chat_id=1602, identity=identity)
+        resolve_screen_for_text('Подтвердить', chat_id=1602, identity=identity)
+        resolve_screen_for_text('Создать публикацию', chat_id=1602, identity=identity)
+        resolve_screen_for_text('Опубликовать сейчас', chat_id=1602, identity=identity)
 
     flow_events = [record for record in caplog.records if record.message == 'bot flow event']
     assert any(record.flow == 'draft' and record.event == 'draft_approved' for record in flow_events)
@@ -796,7 +920,7 @@ def test_render_state_logs_diagnostic_when_draft_detail_cannot_be_restored(fake_
 
     diagnostics = [record for record in caplog.records if record.message == 'bot diagnostic']
     assert any(record.diagnostic_code == 'draft_detail_missing' for record in diagnostics)
-    assert 'Telegram Channel Factory помогает' in screen.text
+    assert 'Помогаю запустить Telegram-канал' in screen.text
 
 
 
@@ -813,7 +937,7 @@ def test_publications_screen_missing_context_logs_diagnostic(fake_db, monkeypatc
     diagnostics = [record for record in caplog.records if record.message == 'bot diagnostic']
     assert any(record.diagnostic_code == 'publications_project_context_missing' for record in diagnostics)
     assert any(record.diagnostic_code == 'unmatched_input' for record in diagnostics)
-    assert 'Telegram Channel Factory помогает' in screen.text
+    assert 'Помогаю запустить Telegram-канал' in screen.text
 
 
 
@@ -833,7 +957,7 @@ def test_open_unknown_draft_logs_selection_diagnostic(fake_db, monkeypatch, capl
 
     diagnostics = [record for record in caplog.records if record.message == 'bot diagnostic']
     assert any(record.diagnostic_code == 'draft_not_found_for_selection' for record in diagnostics)
-    assert 'Telegram Channel Factory помогает' in screen.text
+    assert 'Помогаю запустить Telegram-канал' in screen.text
 
 
 
@@ -845,8 +969,8 @@ def test_create_publication_without_context_logs_diagnostic(fake_db, monkeypatch
     session_store.clear(chat_id)
 
     with caplog.at_level(logging.WARNING):
-        screen = resolve_screen_for_text('Create publication', chat_id=chat_id, identity=identity)
+        screen = resolve_screen_for_text('Создать публикацию', chat_id=chat_id, identity=identity)
 
     diagnostics = [record for record in caplog.records if record.message == 'bot diagnostic']
     assert any(record.diagnostic_code == 'publication_create_missing_context' for record in diagnostics)
-    assert 'Telegram Channel Factory помогает' in screen.text
+    assert 'Помогаю запустить Telegram-канал' in screen.text

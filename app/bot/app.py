@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 USER_ERROR_MAP = {
-    'Only approved drafts can be queued for publication': 'Этот черновик ещё не подтверждён. Сначала открой его и нажми Approve, потом создавай публикацию.',
+    'Only approved drafts can be queued for publication': 'Этот черновик ещё не подтверждён. Сначала открой его и нажми «Подтвердить», потом создавай публикацию.',
     'Draft not found': 'Черновик не найден. Возможно, он был удалён, не сохранился или уже недоступен в текущем проекте.',
     'Channel not found': 'Канал не найден. Открой нужный проект заново или переподключи канал.',
     'Publication not found': 'Публикация не найдена. Возможно, она уже была отменена или ещё не создана.',
@@ -571,6 +571,78 @@ def channel_content_plan_screen_from_backend(identity: TelegramIdentity, chat_id
         db.close()
 
 
+def create_sample_content_plan_from_backend(identity: TelegramIdentity, chat_id: int) -> BotScreen | None:
+    db = SessionLocal()
+    try:
+        bridge = BotBackendBridge(db, identity)
+        project_id = session_store.get_meta(chat_id, 'project_id')
+        if not project_id:
+            return None
+        plan, tasks, _drafts = bridge.ensure_sample_pipeline(project_id, tasks_count=0, drafts_count=0)
+        return BotScreen(
+            text=(
+                'Контент-план создан.\n\n'
+                f'Период: {plan.start_date} → {plan.end_date}\n'
+                f'Статус: {plan.status}\n'
+                f'Задач пока: {len(tasks)}\n\n'
+                'Следующий шаг один: нажми «Сгенерировать 10 идей». '
+                'Я подготовлю темы, из которых потом можно собрать первые черновики.'
+            ),
+            buttons=[['Сгенерировать 10 идей'], ['Контент-план'], ['Главное меню']],
+        )
+    finally:
+        db.close()
+
+
+def generate_sample_tasks_from_backend(identity: TelegramIdentity, chat_id: int) -> BotScreen | None:
+    db = SessionLocal()
+    try:
+        bridge = BotBackendBridge(db, identity)
+        project_id = session_store.get_meta(chat_id, 'project_id')
+        if not project_id:
+            return None
+        plan, tasks, _drafts = bridge.ensure_sample_pipeline(project_id, tasks_count=10, drafts_count=0)
+        return BotScreen(
+            text=(
+                '10 идей готовы.\n\n'
+                f'План: {plan.start_date} → {plan.end_date}\n'
+                f'Всего задач: {len(tasks)}\n'
+                f'Первая идея: {tasks[0].title if tasks else "—"}\n\n'
+                'Следующий шаг один: нажми «Создать 3 черновика». '
+                'После этого можно будет открыть тексты, подтвердить лучший и превратить его в публикацию.'
+            ),
+            buttons=[['Создать 3 черновика'], ['Контент-план'], ['Главное меню']],
+        )
+    finally:
+        db.close()
+
+
+def generate_sample_drafts_from_backend(identity: TelegramIdentity, chat_id: int) -> BotScreen | None:
+    db = SessionLocal()
+    try:
+        bridge = BotBackendBridge(db, identity)
+        project_id = session_store.get_meta(chat_id, 'project_id')
+        if not project_id:
+            return None
+        _plan, _tasks, drafts = bridge.ensure_sample_pipeline(project_id, tasks_count=10, drafts_count=3)
+        if drafts:
+            first = drafts[0]
+            task = first.content_task
+            session_store.set_meta(chat_id, 'draft_id', str(first.id))
+            session_store.set_meta(chat_id, 'draft_title', task.title if task is not None else 'Без задачи')
+        return BotScreen(
+            text=(
+                '3 черновика готовы.\n\n'
+                f'Всего черновиков в проекте: {len(drafts)}\n'
+                'Следующий шаг один: нажми «Черновики», открой лучший текст и подтверди его. '
+                'Потом я проведу к созданию публикации без помощи разработчика.'
+            ),
+            buttons=[['Черновики'], ['Публикации'], ['Главное меню']],
+        )
+    finally:
+        db.close()
+
+
 def channel_drafts_screen_from_backend(identity: TelegramIdentity, chat_id: int) -> BotScreen | None:
     db = SessionLocal()
     try:
@@ -961,10 +1033,25 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
         return BotScreen(
             text=(
                 f'Канал для подключения сохранён: {normalized}.\n'
-                'Теперь нажми «Проверить подключение», когда бот уже добавлен в админы и имеет право писать сообщения.'
+                'Следующий шаг один: нажми «Проверить подключение», когда бот уже добавлен в админы и имеет право писать сообщения.'
             ),
-            buttons=[["Проверить подключение"], ["Повторить инструкцию"], ["Главное меню"]],
+            buttons=[["Проверить подключение"], ["Как создать канал"], ["Главное меню"]],
         )
+
+    if normalized == 'У меня уже есть канал':
+        return BotScreen(
+            text=(
+                'Отлично. Теперь сделай только три действия:\n'
+                '1. Добавь этого бота в администраторы канала.\n'
+                '2. Выдай право на публикацию сообщений.\n'
+                '3. Пришли сюда @username канала.\n\n'
+                'Когда пришлёшь username, я сразу подскажу следующий шаг.'
+            ),
+            buttons=[["Проверить подключение"], ["Как создать канал"], ["Назад"], ["Главное меню"]],
+        )
+
+    if normalized == 'Как создать канал':
+        return service.channel_creation_guide_screen()
 
     if normalized == 'Повторить инструкцию':
         return _wizard_screen_to_bot_screen(service.wizard_channel_connect_screen())
@@ -1060,7 +1147,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
         screen = channel_mode_screen_from_backend(identity, chat_id)
         if screen is not None:
             return screen
-    if normalized == 'Approve' and chat_id is not None and identity is not None:
+    if normalized == 'Подтвердить' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'draft_detail')
         try:
             screen = perform_draft_action_from_backend(identity, chat_id, 'approve')
@@ -1070,7 +1157,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             _log_bot_flow_event('draft', 'draft_approved', chat_id=chat_id, identity=identity, source_screen=source_screen, input_text=normalized, project_id=session_store.get_meta(chat_id, 'project_id'), draft_id=session_store.get_meta(chat_id, 'draft_id'))
             _log_bot_screen('draft_detail', chat_id=chat_id, identity=identity, source_screen=source_screen, reason='draft_approved', input_text=normalized)
             return screen
-    if normalized == 'Reject' and chat_id is not None and identity is not None:
+    if normalized == 'Отклонить' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'draft_detail')
         try:
             screen = perform_draft_action_from_backend(identity, chat_id, 'reject')
@@ -1078,13 +1165,13 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Черновики'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Edit draft' and chat_id is not None and identity is not None:
+    if normalized == 'Редактировать' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'draft_edit_text', push_current=True)
         session_store.set_meta(chat_id, 'draft_edit_pending', '1')
         screen = perform_draft_action_from_backend(identity, chat_id, 'edit')
         if screen is not None:
             return screen
-    if normalized == 'Regenerate' and chat_id is not None and identity is not None:
+    if normalized == 'Пересобрать' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'draft_detail')
         try:
             screen = perform_draft_action_from_backend(identity, chat_id, 'regenerate')
@@ -1092,7 +1179,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Черновики'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Create publication' and chat_id is not None and identity is not None:
+    if normalized == 'Создать публикацию' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'publication_detail', push_current=True)
         try:
             screen = create_publication_from_current_draft(identity, chat_id, scheduled=False)
@@ -1102,7 +1189,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             _log_bot_flow_event('publication', 'publication_created', chat_id=chat_id, identity=identity, source_screen=source_screen, input_text=normalized, project_id=session_store.get_meta(chat_id, 'project_id'), channel_id=session_store.get_meta(chat_id, 'channel_id'), draft_id=session_store.get_meta(chat_id, 'draft_id'), publication_id=session_store.get_meta(chat_id, 'publication_id'))
             _log_bot_screen('publication_detail', chat_id=chat_id, identity=identity, source_screen=source_screen, reason='publication_created', input_text=normalized)
             return screen
-    if normalized == 'Publish now' and chat_id is not None and identity is not None:
+    if normalized == 'Опубликовать сейчас' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'publication_detail')
         try:
             screen = perform_publication_action_from_backend(identity, chat_id, 'publish_now')
@@ -1112,7 +1199,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             _log_bot_flow_event('publication', 'publication_publish_now_requested', chat_id=chat_id, identity=identity, source_screen=source_screen, input_text=normalized, project_id=session_store.get_meta(chat_id, 'project_id'), channel_id=session_store.get_meta(chat_id, 'channel_id'), publication_id=session_store.get_meta(chat_id, 'publication_id'))
             _log_bot_screen('publication_detail', chat_id=chat_id, identity=identity, source_screen=source_screen, reason='publication_publish_now_requested', input_text=normalized)
             return screen
-    if normalized == 'Cancel publication' and chat_id is not None and identity is not None:
+    if normalized == 'Отменить публикацию' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'publication_detail')
         try:
             screen = perform_publication_action_from_backend(identity, chat_id, 'cancel')
@@ -1120,7 +1207,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Публикации'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Schedule publication' and chat_id is not None and identity is not None:
+    if normalized == 'Запланировать' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'schedule_publication_time', push_current=True)
         screen = service.loading_screen('Подготовка публикации', 'Проверяю черновик и жду время публикации.')
         try:
@@ -1129,7 +1216,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Черновики'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Mode: manual' and chat_id is not None and identity is not None:
+    if normalized == 'Режим: ручной' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'channel_mode')
         try:
             screen = change_channel_mode_from_backend(identity, chat_id, MODE_TO_BACKEND['manual'])
@@ -1137,7 +1224,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Режим работы'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Mode: semi_auto' and chat_id is not None and identity is not None:
+    if normalized == 'Режим: ассистент' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'channel_mode')
         try:
             screen = change_channel_mode_from_backend(identity, chat_id, MODE_TO_BACKEND['semi_auto'])
@@ -1145,7 +1232,7 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
             return _error_screen_for_exception(exc, buttons=[['Режим работы'], ['Главное меню']])
         if screen is not None:
             return screen
-    if normalized == 'Mode: auto' and chat_id is not None and identity is not None:
+    if normalized == 'Режим: авто' and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'channel_mode')
         try:
             screen = change_channel_mode_from_backend(identity, chat_id, MODE_TO_BACKEND['auto'])
@@ -1220,12 +1307,21 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
         finally:
             db.close()
 
-    if normalized == 'Создать контент-план':
-        return service.channel_content_plan_screen()
-    if normalized == 'Создать 3 черновика':
-        return service.channel_drafts_screen()
-    if normalized == 'Сгенерировать 10 идей':
-        return service.channel_content_plan_screen()
+    if normalized == 'Создать контент-план' and chat_id is not None and identity is not None:
+        session_store.set_step(chat_id, 'channel_content_plan')
+        screen = create_sample_content_plan_from_backend(identity, chat_id)
+        if screen is not None:
+            return screen
+    if normalized == 'Создать 3 черновика' and chat_id is not None and identity is not None:
+        session_store.set_step(chat_id, 'channel_drafts', push_current=True)
+        screen = generate_sample_drafts_from_backend(identity, chat_id)
+        if screen is not None:
+            return screen
+    if normalized == 'Сгенерировать 10 идей' and chat_id is not None and identity is not None:
+        session_store.set_step(chat_id, 'channel_content_plan', push_current=True)
+        screen = generate_sample_tasks_from_backend(identity, chat_id)
+        if screen is not None:
+            return screen
 
     if identity is not None and chat_id is not None:
         draft_screen = open_draft_screen_from_backend(identity, chat_id, normalized)
