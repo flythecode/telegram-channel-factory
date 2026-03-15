@@ -305,6 +305,8 @@ def _render_screen_by_state(step: str, chat_id: int | None, identity: TelegramId
         return _wizard_screen_to_bot_screen(service.wizard_language_screen())
     if step == 'goal':
         return _wizard_screen_to_bot_screen(service.wizard_goal_screen())
+    if step == 'description':
+        return _wizard_screen_to_bot_screen(service.wizard_description_screen())
     if step == 'content_format':
         return _wizard_screen_to_bot_screen(service.wizard_content_format_screen())
     if step == 'posting_frequency':
@@ -528,6 +530,43 @@ def channel_settings_screen_from_backend(identity: TelegramIdentity, chat_id: in
             posting_frequency=project.posting_frequency,
             operation_mode=operation_mode,
         )
+    finally:
+        db.close()
+
+
+
+def channel_project_edit_screen_from_backend(identity: TelegramIdentity, chat_id: int) -> BotScreen | None:
+    db = SessionLocal()
+    try:
+        bridge = BotBackendBridge(db, identity)
+        project_id = session_store.get_meta(chat_id, 'project_id')
+        if not project_id:
+            return None
+        project = bridge.get_project(project_id)
+        return service.channel_project_edit_screen(
+            project_name=project.name,
+            topic=project.topic or project.niche,
+            language=project.language,
+            goal=project.goal,
+            content_format=project.content_format,
+            posting_frequency=project.posting_frequency,
+            description=project.description,
+        )
+    finally:
+        db.close()
+
+
+
+def save_project_field_from_backend(identity: TelegramIdentity, chat_id: int, field_name: str, value: str | None) -> BotScreen | None:
+    db = SessionLocal()
+    try:
+        bridge = BotBackendBridge(db, identity)
+        project_id = session_store.get_meta(chat_id, 'project_id')
+        if not project_id:
+            return None
+        payload = {field_name: value}
+        bridge.update_project(project_id, service.build_project_update_payload(payload))
+        return channel_project_edit_screen_from_backend(identity, chat_id)
     finally:
         db.close()
 
@@ -1024,8 +1063,42 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
     if normalized in {'Личный бренд', 'Трафик / лиды', 'Экспертный контент'}:
         if chat_id is not None:
             session_store.update_state(chat_id, goal=normalized)
+            session_store.set_step(chat_id, 'description', push_current=True)
+        return _wizard_screen_to_bot_screen(service.wizard_description_screen())
+    if step == 'description' and normalized and normalized not in {'Главное меню', 'Назад', 'Готово', 'Очистить', 'Пропустить'}:
+        if chat_id is not None:
+            current = session_store.get_meta(chat_id, 'description_buffer') or ''
+            updated = (current + '\n\n' + normalized).strip() if current else normalized
+            session_store.set_meta(chat_id, 'description_buffer', updated)
+        return BotScreen(
+            text='Контекст сохранён в буфер. Можешь прислать ещё сообщения или нажать «Готово».',
+            buttons=[['Готово', 'Очистить'], ['Пропустить'], ['Назад'], ['Главное меню']],
+        )
+    if step == 'description' and normalized == 'Очистить':
+        if chat_id is not None:
+            session_store.set_meta(chat_id, 'description_buffer', '')
+        return BotScreen(
+            text='Буфер контекста очищен. Можешь присылать новый контекст сообщениями.',
+            buttons=[['Готово', 'Очистить'], ['Пропустить'], ['Назад'], ['Главное меню']],
+        )
+    if step == 'description' and normalized in {'Готово', 'Пропустить'}:
+        if chat_id is not None:
+            buffered = session_store.get_meta(chat_id, 'description_buffer') or ''
+            description = None if normalized == 'Пропустить' and not buffered else (buffered or None)
+            session_store.update_state(chat_id, description=description)
+            session_store.set_meta(chat_id, 'description_buffer', '')
             session_store.set_step(chat_id, 'content_format', push_current=True)
         return _wizard_screen_to_bot_screen(service.wizard_content_format_screen())
+    if step == 'channel_project_edit_value' and normalized and normalized not in {'Главное меню', 'Назад'} and chat_id is not None and identity is not None:
+        field_name = session_store.get_meta(chat_id, 'editing_project_field')
+        if field_name:
+            value = normalized
+            if field_name == 'language':
+                value = 'ru' if normalized == 'Русский' else ('en' if normalized == 'English' else normalized)
+            screen = save_project_field_from_backend(identity, chat_id, field_name, value)
+            session_store.set_step(chat_id, 'channel_project_edit', push_current=False)
+            if screen is not None:
+                return screen
     if normalized in {'Короткие посты', 'Аналитика', 'Смешанный формат'}:
         if chat_id is not None:
             session_store.update_state(chat_id, content_format=normalized)
@@ -1193,11 +1266,30 @@ def resolve_screen_for_text(text: str, chat_id: int | None = None, identity: Tel
         screen = publications_screen_from_backend(identity, chat_id)
         if screen is not None:
             return screen
-    if normalized in {'Режим работы', 'Режим', '🎛 Режим', '🎛 Режим работы'} and chat_id is not None and identity is not None:
+    if normalized in {'Режим работы', 'Режим', '🎛 Режим', '🎛 Режим работы', '🛠 Режим работы'} and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'channel_mode', push_current=True)
         screen = channel_mode_screen_from_backend(identity, chat_id)
         if screen is not None:
             return screen
+    if normalized in {'✏️ Редактировать проект', 'Редактировать проект'} and chat_id is not None and identity is not None:
+        session_store.set_step(chat_id, 'channel_project_edit', push_current=True)
+        screen = channel_project_edit_screen_from_backend(identity, chat_id)
+        if screen is not None:
+            return screen
+    if normalized in {'✏️ Название', '✏️ Ниша', '✏️ Язык', '✏️ Цель', '✏️ Формат', '✏️ Частота', '✏️ Описание'} and chat_id is not None and identity is not None:
+        field_map = {
+            '✏️ Название': ('name', 'Введи новое название проекта.'),
+            '✏️ Ниша': ('niche', 'Введи новую нишу / тему проекта.'),
+            '✏️ Язык': ('language', 'Введи новый язык проекта: Русский или English.'),
+            '✏️ Цель': ('goal', 'Введи новую цель проекта.'),
+            '✏️ Формат': ('content_format', 'Введи новый формат контента.'),
+            '✏️ Частота': ('posting_frequency', 'Введи новую частоту публикаций.'),
+            '✏️ Описание': ('description', 'Введи новое описание проекта / контекст.'),
+        }
+        field_name, prompt = field_map[normalized]
+        session_store.set_meta(chat_id, 'editing_project_field', field_name)
+        session_store.set_step(chat_id, 'channel_project_edit_value', push_current=True)
+        return BotScreen(text=prompt, buttons=[['⬅️ Назад'], ['🏠 Главное меню']])
     if normalized in {'Подтвердить', '✅ Подтвердить'} and chat_id is not None and identity is not None:
         session_store.set_step(chat_id, 'draft_detail')
         try:

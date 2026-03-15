@@ -12,6 +12,7 @@ from app.bot.screens import (
     channel_dashboard_screen,
     channel_drafts_screen,
     channel_settings_screen,
+    channel_project_edit_screen,
     channels_list_screen,
     draft_detail_screen,
     mode_screen,
@@ -28,7 +29,7 @@ from app.bot.texts import (
 )
 from app.bot.ux import human_action_label
 from app.bot.wizard import CHANNEL_CREATION_GUIDE_TEXT, ProjectWizardService, ProjectWizardState, WizardScreen
-from app.schemas.project import ProjectCreate
+from app.schemas.project import ProjectCreate, ProjectUpdate
 
 
 @dataclass(slots=True)
@@ -84,6 +85,19 @@ class BotService:
         operation_mode: str,
     ) -> BotScreen:
         data = channel_settings_screen(project_name, topic, language, content_format, posting_frequency, operation_mode)
+        return BotScreen(text=data['text'], buttons=data['buttons'])
+
+    def channel_project_edit_screen(
+        self,
+        project_name: str,
+        topic: str | None,
+        language: str,
+        goal: str | None,
+        content_format: str | None,
+        posting_frequency: str | None,
+        description: str | None,
+    ) -> BotScreen:
+        data = channel_project_edit_screen(project_name, topic, language, goal, content_format, posting_frequency, description)
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
     def channel_agents_screen(self, agents: list[AgentSummary] | None = None) -> BotScreen:
@@ -161,6 +175,9 @@ class BotService:
     def wizard_goal_screen(self) -> WizardScreen:
         return self.wizard.step_goal()
 
+    def wizard_description_screen(self) -> WizardScreen:
+        return self.wizard.step_description()
+
     def wizard_content_format_screen(self) -> WizardScreen:
         return self.wizard.step_content_format()
 
@@ -220,9 +237,13 @@ class BotService:
     def project_create_payload_from_wizard_state(self, state: ProjectWizardState) -> ProjectCreate:
         return ProjectCreate(
             name=state.name or 'Новый канал',
+            description=state.description,
             niche=state.niche,
             language='ru' if state.language == 'Русский' else ('en' if state.language == 'English' else 'ru'),
             goal=state.goal,
             content_format=state.content_format,
             posting_frequency=state.posting_frequency,
         )
+
+    def build_project_update_payload(self, values: dict) -> ProjectUpdate:
+        return ProjectUpdate(**values)

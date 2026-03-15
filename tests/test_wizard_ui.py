@@ -8,6 +8,7 @@ def test_wizard_has_linear_project_setup_steps():
     assert service.wizard_niche_screen().step == 'niche'
     assert service.wizard_language_screen().step == 'language'
     assert service.wizard_goal_screen().step == 'goal'
+    assert service.wizard_description_screen().step == 'description'
     assert service.wizard_content_format_screen().step == 'content_format'
     assert service.wizard_posting_frequency_screen().step == 'posting_frequency'
 
@@ -19,12 +20,14 @@ def test_wizard_summary_screen_renders_collected_state():
         niche='AI',
         language='Русский',
         goal='Личный бренд',
+        description='Канал про ИИ-агентов для предпринимателей',
         content_format='Аналитика',
         posting_frequency='Ежедневно',
     )
     screen = service.wizard_summary_screen(state)
     assert 'Alpha Channel' in screen.text
     assert 'AI' in screen.text
+    assert 'Канал про ИИ-агентов для предпринимателей' in screen.text
     assert 'Ежедневно' in screen.text
 
 
@@ -44,6 +47,7 @@ def test_project_create_payload_is_built_from_wizard_state():
         niche='AI',
         language='Русский',
         goal='Личный бренд',
+        description='Полный контекст проекта',
         content_format='Аналитика',
         posting_frequency='Ежедневно',
     )
@@ -51,6 +55,7 @@ def test_project_create_payload_is_built_from_wizard_state():
     payload = service.project_create_payload_from_wizard_state(state)
 
     assert payload.name == 'Alpha Channel'
+    assert payload.description == 'Полный контекст проекта'
     assert payload.niche == 'AI'
     assert payload.language == 'ru'
     assert payload.goal == 'Личный бренд'

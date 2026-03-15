@@ -88,7 +88,7 @@ def test_resolve_screen_for_text_routes_main_menu_and_wizard_entry():
     assert start.buttons[0][0] == 'Начать'
 
     name_step = resolve_screen_for_text('Начать')
-    assert 'Шаг 1/6' in name_step.text
+    assert 'Шаг 1/7' in name_step.text
 
     help_screen = resolve_screen_for_text('Помощь')
     assert 'С чем я помогаю' in help_screen.text
@@ -106,32 +106,37 @@ def test_resolve_screen_for_text_walks_through_stateful_wizard_steps():
     assert 'Создадим проект канала' in start.text
 
     name = resolve_screen_for_text('Начать', chat_id=chat_id)
-    assert 'Шаг 1/6' in name.text
+    assert 'Шаг 1/7' in name.text
 
     language = resolve_screen_for_text('Alpha Channel', chat_id=chat_id)
-    assert 'Шаг 2/6' in language.text
+    assert 'Шаг 2/7' in language.text
     assert session_store.get_state(chat_id).name == 'Alpha Channel'
 
     goal = resolve_screen_for_text('AI', chat_id=chat_id)
-    assert 'Шаг 3/6' in goal.text
+    assert 'Шаг 3/7' in goal.text
     assert session_store.get_state(chat_id).niche == 'AI'
 
-    content_format = resolve_screen_for_text('Русский', chat_id=chat_id)
-    assert 'Шаг 4/6' in content_format.text
+    description = resolve_screen_for_text('Русский', chat_id=chat_id)
+    assert 'Шаг 4/7' in description.text
     assert session_store.get_state(chat_id).language == 'Русский'
 
-    frequency = resolve_screen_for_text('Личный бренд', chat_id=chat_id)
-    assert 'Шаг 5/6' in frequency.text
+    content_format = resolve_screen_for_text('Личный бренд', chat_id=chat_id)
+    assert 'Шаг 5/7' in content_format.text
     assert session_store.get_state(chat_id).goal == 'Личный бренд'
 
+    frequency = resolve_screen_for_text('Канал про ИИ-агентов для предпринимателей', chat_id=chat_id)
+    assert 'Шаг 6/7' in frequency.text
+    assert session_store.get_state(chat_id).description == 'Канал про ИИ-агентов для предпринимателей'
+
     summary = resolve_screen_for_text('Аналитика', chat_id=chat_id)
-    assert 'Шаг 6/6' in summary.text
+    assert 'Шаг 7/7' in summary.text
     assert session_store.get_state(chat_id).content_format == 'Аналитика'
 
     summary = resolve_screen_for_text('Ежедневно', chat_id=chat_id)
     assert 'Проверь настройки проекта' in summary.text
     assert 'Alpha Channel' in summary.text
     assert 'AI' in summary.text
+    assert 'Канал про ИИ-агентов для предпринимателей' in summary.text
     assert session_store.get_state(chat_id).posting_frequency == 'Ежедневно'
 
     preset = resolve_screen_for_text('Подтвердить проект', chat_id=chat_id)
@@ -726,14 +731,17 @@ def test_full_manual_ui_only_e2e_flow_is_now_reachable(fake_db, monkeypatch):
 
     assert 'Помогаю запустить Telegram-канал' in resolve_screen_for_text('/start', chat_id=chat_id, identity=identity).text
     assert 'Создадим проект канала' in resolve_screen_for_text('Создать канал', chat_id=chat_id, identity=identity).text
-    assert 'Шаг 1/6' in resolve_screen_for_text('Начать', chat_id=chat_id, identity=identity).text
-    assert 'Шаг 2/6' in resolve_screen_for_text('Alpha Factory', chat_id=chat_id, identity=identity).text
+    assert 'Шаг 1/7' in resolve_screen_for_text('Начать', chat_id=chat_id, identity=identity).text
+    assert 'Шаг 2/7' in resolve_screen_for_text('Alpha Factory', chat_id=chat_id, identity=identity).text
     resolve_screen_for_text('AI', chat_id=chat_id, identity=identity)
     resolve_screen_for_text('Русский', chat_id=chat_id, identity=identity)
-    resolve_screen_for_text('Экспертный контент', chat_id=chat_id, identity=identity)
+    description = resolve_screen_for_text('Экспертный контент', chat_id=chat_id, identity=identity)
+    assert 'Шаг 5/7' in description.text
+    resolve_screen_for_text('Канал про ИИ-агентов для предпринимателей', chat_id=chat_id, identity=identity)
     resolve_screen_for_text('Аналитика', chat_id=chat_id, identity=identity)
     summary = resolve_screen_for_text('Ежедневно', chat_id=chat_id, identity=identity)
     assert 'Alpha Factory' in summary.text
+    assert 'Канал про ИИ-агентов для предпринимателей' in summary.text
 
     preset = resolve_screen_for_text('Подтвердить проект', chat_id=chat_id, identity=identity)
     assert 'Проект создан' in preset.text

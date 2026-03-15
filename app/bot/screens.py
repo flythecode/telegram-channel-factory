@@ -174,10 +174,34 @@ def channel_settings_screen(project_name: str, topic: str | None, language: str,
         f'Формат: {content_format or "—"}\n'
         f'Частота: {posting_frequency or "—"}\n'
         f'Режим проекта: {operation_mode}\n\n'
-        'Если настройки выглядят нормально, следующий рабочий шаг — вернуться в «Контент-план» или «Черновики». '
-        'Этот экран нужен только для проверки текущей конфигурации.'
+        'Следующий рабочий шаг один: выбери, что менять — режим проекта или параметры, которые задавались в wizard.'
     )
-    return section_screen('Настройки канала', body)
+    return section_screen('Настройки канала', body, buttons=[['✏️ Редактировать проект', '🛠 Режим работы'], ['⬅️ Назад', '🏠 Главное меню']])
+
+
+
+def channel_project_edit_screen(project_name: str, topic: str | None, language: str, goal: str | None, content_format: str | None, posting_frequency: str | None, description: str | None) -> dict:
+    body = (
+        f'Проект: {project_name}\n'
+        f'Тема/ниша: {topic or "—"}\n'
+        f'Язык: {language}\n'
+        f'Цель: {goal or "—"}\n'
+        f'Формат: {content_format or "—"}\n'
+        f'Частота: {posting_frequency or "—"}\n'
+        f'Описание: {description or "—"}\n\n'
+        'Следующий рабочий шаг один: выбери конкретный пункт для редактирования.'
+    )
+    return section_screen(
+        'Редактировать проект',
+        body,
+        buttons=[
+            ['✏️ Название', '✏️ Ниша'],
+            ['✏️ Язык', '✏️ Цель'],
+            ['✏️ Формат', '✏️ Частота'],
+            ['✏️ Описание'],
+            ['⬅️ Назад', '🏠 Главное меню'],
+        ],
+    )
 
 
 
