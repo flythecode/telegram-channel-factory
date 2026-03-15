@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from app.models.client_account import ClientAccount
 from app.models.project import Project
 from app.models.user import User
 from app.models.workspace import Workspace
@@ -21,12 +22,13 @@ def list_projects_for_owner(db: Session, owner_user_id):
 
 
 
-def create_project_for_owner(db: Session, payload: ProjectCreate, owner: User, workspace: Workspace) -> Project:
+def create_project_for_owner(db: Session, payload: ProjectCreate, owner: User, workspace: Workspace, client_account: ClientAccount | None = None) -> Project:
     project = Project(
         **payload.model_dump(),
         owner_user_id=owner.id,
         created_by_user_id=owner.id,
         workspace_id=workspace.id,
+        client_account_id=getattr(client_account, "id", None),
     )
     db.add(project)
     db.commit()

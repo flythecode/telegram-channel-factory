@@ -6,13 +6,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.content_task import ContentTask
 from app.models.draft import Draft
-from app.schemas.draft import DraftCreate, DraftRead, DraftUpdate
-from app.services.agent_service import get_default_writer_agent
+from app.schemas.draft import DraftCreate, DraftRead, DraftRewriteRequest, DraftUpdate
 from app.services.audit_service import create_audit_event, snapshot_entity
 from app.services.crud import get_entity_or_404, update_entity
-from app.services.orchestration import run_linear_orchestration
+from app.services.generation_queue import enqueue_and_process_generation_job
 from app.services.workflow import approve_draft, mark_task_as_drafted, reject_draft
-from app.utils.enums import DraftStatus
+from app.utils.enums import DraftStatus, GenerationJobOperation
 
 router = APIRouter(tags=["drafts"])
 
@@ -20,26 +19,18 @@ router = APIRouter(tags=["drafts"])
 @router.post("/tasks/{task_id}/drafts", response_model=DraftRead, status_code=status.HTTP_201_CREATED)
 def create_draft(task_id: UUID, payload: DraftCreate, db: Session = Depends(get_db)):
     task = get_entity_or_404(db, ContentTask, task_id, "Task not found")
-    data = payload.model_dump()
-    orchestration = run_linear_orchestration(db, task)
-    if not data.get('created_by_agent'):
-        agent = get_default_writer_agent(db, task.project_id)
-        if agent is not None:
-            data['created_by_agent'] = agent.display_name or agent.name
-        elif orchestration.final_agent_name is not None:
-            data['created_by_agent'] = orchestration.final_agent_name
-    data['generation_metadata'] = {
-        'preset_code': orchestration.preset_code,
-        'applied_agent_ids': orchestration.applied_agent_ids,
-        'stage_roles': [stage.role for stage in orchestration.stages],
-        'final_agent_name': orchestration.final_agent_name,
-    }
-    draft = Draft(content_task_id=task_id, **data)
-    mark_task_as_drafted(task, draft)
-    db.add(draft)
-    db.add(task)
-    db.commit()
-    db.refresh(draft)
+    try:
+        result = enqueue_and_process_generation_job(
+            db,
+            operation=GenerationJobOperation.CREATE_DRAFT,
+            project_id=task.project_id,
+            content_task_id=task.id,
+            payload=payload.model_dump(),
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    draft = result.draft
+    assert draft is not None
     create_audit_event(
         db,
         project_id=task.project_id,
@@ -116,8 +107,19 @@ def reject_draft_endpoint(draft_id: UUID, db: Session = Depends(get_db)):
 def regenerate_draft(draft_id: UUID, db: Session = Depends(get_db)):
     draft = get_entity_or_404(db, Draft, draft_id, 'Draft not found')
     before = snapshot_entity(draft)
-    updated = DraftUpdate(text=draft.text + '\n\n[Regenerated]', status=DraftStatus.EDITED)
-    draft = update_entity(db, draft, updated)
+    try:
+        result = enqueue_and_process_generation_job(
+            db,
+            operation=GenerationJobOperation.REGENERATE_DRAFT,
+            project_id=draft.content_task.project_id,
+            content_task_id=draft.content_task_id,
+            draft_id=draft.id,
+            payload={},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    draft = result.draft
+    assert draft is not None
     create_audit_event(
         db,
         project_id=draft.content_task.project_id,
@@ -126,5 +128,35 @@ def regenerate_draft(draft_id: UUID, db: Session = Depends(get_db)):
         action='regenerate_draft',
         before_json=before,
         after_json=snapshot_entity(draft),
+    )
+    return draft
+
+
+@router.post('/drafts/{draft_id}/rewrite', response_model=DraftRead)
+def rewrite_draft(draft_id: UUID, payload: DraftRewriteRequest, db: Session = Depends(get_db)):
+    draft = get_entity_or_404(db, Draft, draft_id, 'Draft not found')
+    before = snapshot_entity(draft)
+    try:
+        result = enqueue_and_process_generation_job(
+            db,
+            operation=GenerationJobOperation.REWRITE_DRAFT,
+            project_id=draft.content_task.project_id,
+            content_task_id=draft.content_task_id,
+            draft_id=draft.id,
+            payload={'rewrite_prompt': payload.rewrite_prompt},
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    draft = result.draft
+    assert draft is not None
+    create_audit_event(
+        db,
+        project_id=draft.content_task.project_id,
+        entity_type='draft',
+        entity_id=draft.id,
+        action='rewrite_draft',
+        before_json=before,
+        after_json=snapshot_entity(draft),
+        notes=f'rewrite_prompt={payload.rewrite_prompt.strip()[:500]}',
     )
     return draft

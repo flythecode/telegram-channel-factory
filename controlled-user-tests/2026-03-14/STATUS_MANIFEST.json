@@ -44,7 +44,7 @@
     "needsObservedUxFindings": true
   },
   "currentStatus": "blocked_on_real_participants",
-  "lastVerifiedAt": "2026-03-14T06:04:14Z",
+  "lastVerifiedAt": "2026-03-14T22:20:54Z",
   "latestEvidence": [
     "template_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
     "PARTICIPANT_01.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",

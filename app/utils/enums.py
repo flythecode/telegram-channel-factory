@@ -65,3 +65,31 @@ class PublicationStatus(str, Enum):
     SENT = "sent"
     FAILED = "failed"
     CANCELED = "canceled"
+
+
+class SubscriptionStatus(str, Enum):
+    TRIAL = "trial"
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    CANCELED = "canceled"
+    SUSPENDED = "suspended"
+
+
+class BillingCycle(str, Enum):
+    MONTHLY = "monthly"
+    YEARLY = "yearly"
+    CUSTOM = "custom"
+
+
+class GenerationJobStatus(str, Enum):
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class GenerationJobOperation(str, Enum):
+    CREATE_DRAFT = "create_draft"
+    REGENERATE_DRAFT = "regenerate_draft"
+    REWRITE_DRAFT = "rewrite_draft"
+    GENERATE_CONTENT_PLAN = "generate_content_plan"

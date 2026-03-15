@@ -51,6 +51,19 @@ if grep -Eq '^TELEGRAM_BOT_TOKEN_FILE=' "${ENV_FILE}"; then
   [[ -f "${TOKEN_FILE}" ]] || fail "Telegram token file not found: ${TOKEN_FILE}"
 fi
 
+if grep -Eq '^LLM_API_KEY=' "${ENV_FILE}"; then
+  fail "${ENV_FILE} must not contain inline LLM_API_KEY; use LLM_API_KEY_FILE instead."
+fi
+
+if grep -Eq '^LLM_API_KEY_FILE=' "${ENV_FILE}"; then
+  LLM_KEY_FILE="$(grep -E '^LLM_API_KEY_FILE=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
+  [[ -n "${LLM_KEY_FILE}" ]] || fail "LLM_API_KEY_FILE is empty in ${ENV_FILE}"
+  if [[ "${LLM_KEY_FILE}" != /* ]]; then
+    LLM_KEY_FILE="${APP_DIR}/${LLM_KEY_FILE}"
+  fi
+  [[ -f "${LLM_KEY_FILE}" ]] || fail "LLM key file not found: ${LLM_KEY_FILE}"
+fi
+
 cd "${APP_DIR}"
 mkdir -p "${BACKUP_DIR}"
 

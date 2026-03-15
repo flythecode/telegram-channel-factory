@@ -55,5 +55,7 @@ def test_deploy_script_uses_runtime_user_and_external_env_file():
     assert 'Run this script as the runtime user' in script
     assert 'if [[ "$(id -un)" == "root" ]]; then' in script
     assert 'docker info >/dev/null 2>&1' in script
+    assert 'must not contain inline TELEGRAM_BOT_TOKEN' in script
+    assert 'must not contain inline LLM_API_KEY' in script
     assert 'docker compose --env-file "${ENV_FILE}" -f "${COMPOSE_FILE}" up --build -d' in script
     assert 'cp "${TCF_ENV_FILE}" .env' not in script

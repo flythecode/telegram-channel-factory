@@ -34,3 +34,10 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         back_populates="created_by_user",
         foreign_keys="Project.created_by_user_id",
     )
+
+    client_accounts = relationship(
+        "ClientAccount",
+        back_populates="owner_user",
+        foreign_keys="ClientAccount.owner_user_id",
+        cascade="all, delete-orphan",
+    )

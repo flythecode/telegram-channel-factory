@@ -9,6 +9,7 @@ from app.models.telegram_channel import TelegramChannel
 from app.schemas.publication import PublicationCreate, PublicationUpdate
 from app.services.crud import get_entity_or_404, update_entity
 from app.services.publisher_factory import get_publisher
+from app.services.generation_metadata import build_publication_generation_metadata
 from app.services.publications import (
     publication_status_on_create,
     sync_task_status_from_publication,
@@ -70,6 +71,7 @@ def queue_publication(db: Session, draft_id, payload: PublicationCreate) -> Publ
         telegram_channel_id=payload.telegram_channel_id,
         scheduled_for=payload.scheduled_for,
         status=publication_status_on_create(is_scheduled),
+        generation_metadata=build_publication_generation_metadata(draft, telegram_channel_id=payload.telegram_channel_id),
     )
     db.add(publication)
 

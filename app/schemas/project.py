@@ -42,6 +42,7 @@ class ProjectUpdate(BaseModel):
 
 class ProjectRead(TimestampedSchema):
     workspace_id: UUID | None
+    client_account_id: UUID | None
     owner_user_id: UUID | None
     created_by_user_id: UUID | None
     name: str

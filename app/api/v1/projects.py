@@ -11,6 +11,7 @@ from app.api.v1.project_config_versions import router as project_config_versions
 from app.services.crud import get_entity_or_404
 from app.services.identity import (
     TelegramIdentity,
+    get_or_create_client_account_for_user,
     get_or_create_current_user,
     get_or_create_workspace_for_user,
     get_telegram_identity,
@@ -33,7 +34,8 @@ def create_project(
 ):
     user = get_or_create_current_user(db, identity)
     workspace = get_or_create_workspace_for_user(db, user, identity)
-    return create_project_for_owner(db, payload, user, workspace)
+    client_account = get_or_create_client_account_for_user(db, user, workspace, identity)
+    return create_project_for_owner(db, payload, user, workspace, client_account=client_account)
 
 
 @router.post("/wizard", response_model=ProjectRead, status_code=status.HTTP_201_CREATED)
@@ -44,7 +46,8 @@ def create_project_from_wizard(
 ):
     user = get_or_create_current_user(db, identity)
     workspace = get_or_create_workspace_for_user(db, user, identity)
-    return create_project_for_owner(db, payload, user, workspace)
+    client_account = get_or_create_client_account_for_user(db, user, workspace, identity)
+    return create_project_for_owner(db, payload, user, workspace, client_account=client_account)
 
 
 @router.get("", response_model=list[ProjectRead])

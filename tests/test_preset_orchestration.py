@@ -1,7 +1,22 @@
 from app.models.content_task import ContentTask
 from app.models.project import Project
 from app.services.agent_service import apply_preset_to_project, ensure_default_presets
-from app.services.orchestration import run_linear_orchestration
+from app.services.orchestration import run_linear_orchestration, _resolve_stage_model
+from app.core.config import settings
+
+
+def test_default_stage_model_aliases_resolve_to_runtime_default(fake_db, monkeypatch):
+    monkeypatch.setattr(settings, 'llm_model_default', 'gpt-4.1-mini')
+    project = Project(name='Alias Project', language='ru')
+    fake_db.add(project)
+    fake_db.refresh(project)
+    ensure_default_presets(fake_db)
+    agents = apply_preset_to_project(fake_db, project.id, 'starter_3')
+
+    resolved = [_resolve_stage_model(agent) for agent in agents]
+
+    assert all(model == 'gpt-4.1-mini' for model in resolved)
+
 
 
 def test_starter_3_preset_drives_three_stage_pipeline(fake_db):

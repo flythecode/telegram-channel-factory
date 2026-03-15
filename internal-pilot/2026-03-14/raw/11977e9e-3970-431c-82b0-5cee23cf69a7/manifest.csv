@@ -1,0 +1,9 @@
+endpoint,filename,bytes,relative_path
+client-cost-dashboard,client-cost-dashboard.json,2380,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/client-cost-dashboard.json
+client-pricing,client-pricing.json,5274,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/client-pricing.json
+client-cost-dashboard-report,client-cost-dashboard-report.csv,734,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/client-cost-dashboard-report.csv
+admin-generation-history,admin-generation-history.json,2699,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/admin-generation-history.json
+admin-generation-usage,admin-generation-usage.json,1963,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/admin-generation-usage.json
+admin-generation-cost-breakdown,admin-generation-cost-breakdown.json,1670,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/admin-generation-cost-breakdown.json
+admin-generation-usage,admin-generation-usage.csv,787,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/admin-generation-usage.csv
+admin-generation-cost-breakdown,admin-generation-cost-breakdown.csv,524,raw/11977e9e-3970-431c-82b0-5cee23cf69a7/admin-generation-cost-breakdown.csv

@@ -1,4 +1,17 @@
-def test_agent_presets_return_expected_team_sizes_and_order(client):
+from app.models.client_account import ClientAccount
+
+
+
+def _set_current_plan(client, fake_db, plan_code: str) -> None:
+    response = client.get('/api/v1/users/me/client-account')
+    account = fake_db.get(ClientAccount, response.json()['id'])
+    account.subscription_plan_code = plan_code
+    account.subscription_status = 'active' if plan_code != 'trial' else 'trial'
+
+
+
+def test_agent_presets_return_expected_team_sizes_and_order(client, fake_db):
+    _set_current_plan(client, fake_db, 'business')
     project = client.post('/api/v1/projects', json={'name': 'Preset Size Project', 'language': 'ru'}).json()
 
     starter = client.post(f"/api/v1/projects/{project['id']}/agent-team-presets/starter_3/apply")
@@ -20,7 +33,8 @@ def test_agent_presets_return_expected_team_sizes_and_order(client):
     assert editorial_agents[4]['role'] == 'fact_checker'
 
 
-def test_agent_settings_update_is_predictable(client):
+def test_agent_settings_update_is_predictable(client, fake_db):
+    _set_current_plan(client, fake_db, 'starter')
     project = client.post('/api/v1/projects', json={'name': 'Agent Settings Project', 'language': 'ru'}).json()
     applied = client.post(f"/api/v1/projects/{project['id']}/agent-team-presets/balanced_5/apply")
     assert applied.status_code == 200

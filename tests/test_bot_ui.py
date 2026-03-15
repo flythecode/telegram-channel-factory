@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timezone
 import logging
 
 from app.bot.service import BotService
@@ -26,8 +26,10 @@ from app.bot.app import (
 )
 from app.services.identity import TelegramIdentity
 from app.models.draft import Draft
+from app.models.generation_job import GenerationJob
+from app.models.llm_generation_event import LLMGenerationEvent
 from app.bot.screens import publication_detail_screen
-from app.utils.enums import DraftStatus
+from app.utils.enums import DraftStatus, GenerationJobOperation, GenerationJobStatus, SubscriptionStatus
 
 
 def test_start_screen_is_meaningful():
@@ -42,10 +44,10 @@ def test_main_menu_contains_core_entries():
     service = BotService()
     screen = service.main_menu_screen()
     flat = [item for row in screen.buttons for item in row]
-    assert 'Создать канал' in flat
-    assert 'Мои каналы' in flat
-    assert 'Помощь' in flat
-    assert 'Как это работает' in flat
+    assert '➕ Канал' in flat
+    assert '📂 Каналы' in flat
+    assert '❓ Помощь' in flat
+    assert '✨ Как это работает' in flat
 
 
 
@@ -284,6 +286,107 @@ def test_my_channels_and_open_channel_dashboard_are_backed_by_bridge(fake_db, mo
     assert 'Черновиков: 1' in dashboard.text
     assert 'Следующий шаг: открой «Черновики»' in dashboard.text
     assert session_store.get_meta(777, 'channel_title') == 'Alpha Channel'
+
+
+
+def test_dashboard_surfaces_generation_status_limits_and_queue(fake_db, monkeypatch):
+    monkeypatch.setattr('app.bot.app.SessionLocal', lambda: fake_db)
+
+    identity = TelegramIdentity(telegram_user_id='tg-gen-1', telegram_username='genstatus')
+    bridge = __import__('app.bot.backend_bridge', fromlist=['BotBackendBridge']).BotBackendBridge(fake_db, identity)
+    project = bridge.create_project(__import__('app.schemas.project', fromlist=['ProjectCreate']).ProjectCreate(name='Gamma Channel', language='ru'))
+    bridge.apply_preset(project.id, 'starter_3')
+    channel = bridge.connect_channel(project.id, 'Gamma Channel', 'gamma_channel')
+
+    bridge.client_account.subscription_plan_code = 'starter'
+    bridge.client_account.subscription_status = SubscriptionStatus.ACTIVE
+    bridge.client_account.settings = {
+        'generation_guardrails': {
+            'client_generation_quota_limit': 1,
+        }
+    }
+
+    fake_db.add(
+        GenerationJob(
+            project_id=project.id,
+            client_account_id=bridge.client_account.id,
+            operation=GenerationJobOperation.CREATE_DRAFT,
+            status=GenerationJobStatus.FAILED,
+            priority=40,
+            payload={},
+            error_message='openai request failed with status 429',
+            queued_at=datetime.now(),
+        )
+    )
+
+    fake_db.add(
+        LLMGenerationEvent(
+            client_id=bridge.client_account.id,
+            project_id=project.id,
+            telegram_channel_id=channel.id,
+            operation_type='draft',
+            provider='stub',
+            model='stub',
+            status='succeeded',
+            total_tokens=100,
+            estimated_cost_usd='0.001000',
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+        )
+    )
+
+    dashboard = open_channel_dashboard_from_backend(identity, 'Gamma Channel', chat_id=778)
+    assert dashboard is not None
+    assert 'Generation status:' in dashboard.text
+    assert 'Статус плана:' in dashboard.text
+    assert 'Очередь: queued 0 / processing 0 / failed 1' in dashboard.text
+    assert 'Причина блокировки:' in dashboard.text
+    assert 'Лимит generation:' in dashboard.text
+    assert 'Остаток generation:' in dashboard.text
+
+
+
+def test_draft_detail_surfaces_provider_failover_diagnostics():
+    screen = BotService().draft_detail_screen(
+        title='AI recap',
+        status='created',
+        version=3,
+        text='Draft body',
+        created_by_agent='writer',
+        generation_summary={
+            'queue': {'queued': 0, 'processing': 0, 'failed': 0, 'latest_status': 'succeeded', 'latest_error': None},
+            'plan': {
+                'label': 'Pro',
+                'code': 'pro',
+                'access_flag': 'paid',
+                'status': 'active',
+                'status_label': 'активен',
+                'generation_limit': 1500,
+                'generation_used': 200,
+                'generation_remaining': 1300,
+                'period_end': '2026-03-31T00:00:00+00:00',
+                'is_blocked': False,
+                'block_reason': None,
+            },
+            'guardrails': {'hard_stop_reached': False, 'soft_limit_reached': False, 'client': {'windows': []}},
+            'generation': {
+                'provider': 'openai',
+                'model': 'gpt-5-mini',
+                'finish_reason': 'provider_unavailable',
+                'failover_activated': True,
+                'failover_outcome': 'graceful-degradation',
+                'fallback_provider': 'openrouter',
+                'primary_error_message': 'openai request failed with status 429',
+            },
+        },
+    )
+
+    assert 'Статус плана: активен' in screen.text
+    assert 'Остаток generation: 1300' in screen.text
+    assert 'Provider/model: openai / gpt-5-mini' in screen.text
+    assert 'Provider сейчас деградировал' in screen.text
+    assert 'Failover: graceful-degradation → openrouter' in screen.text
+    assert 'Ошибка provider’а: openai request failed with status 429' in screen.text
 
 
 

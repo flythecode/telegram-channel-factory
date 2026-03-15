@@ -4,6 +4,7 @@ from uuid import uuid4
 from fastapi import Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.models.client_account import ClientAccount
 from app.models.user import User
 from app.models.workspace import Workspace
 
@@ -83,3 +84,30 @@ def get_or_create_workspace_for_user(db: Session, user: User, identity: Telegram
     db.commit()
     db.refresh(workspace)
     return workspace
+
+
+
+def get_or_create_client_account_for_user(db: Session, user: User, workspace: Workspace, identity: TelegramIdentity) -> ClientAccount:
+    for account in db.query(ClientAccount).all():
+        if account.owner_user_id == user.id and (account.workspace_id is None or account.workspace_id == workspace.id):
+            if workspace.id and account.workspace_id is None:
+                account.workspace_id = workspace.id
+                db.add(account)
+                db.commit()
+                db.refresh(account)
+            return account
+
+    account_name = user.full_name or identity.telegram_username or f"Telegram User {identity.telegram_user_id}"
+    account = ClientAccount(
+        owner_user_id=user.id,
+        workspace_id=workspace.id,
+        name=account_name,
+        billing_email=user.email,
+        subscription_plan_code="trial",
+        subscription_status="trial",
+        settings={"source": "telegram_identity", "telegram_user_id": identity.telegram_user_id, "generation_mode": "multi-stage"},
+    )
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+    return account

@@ -1,0 +1,83 @@
+{
+  "client_id": "532db2d3-cb3e-4ab6-9aed-7977a0797e62",
+  "generated_at": "2026-03-14T19:13:48.818505Z",
+  "billing_period_start": null,
+  "billing_period_end": null,
+  "totals": {
+    "key": "total",
+    "label": "All generation",
+    "events_count": 3,
+    "successful_events_count": 3,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_tokens": 0,
+    "total_cost_usd": "0.000000"
+  },
+  "by_channel": [
+    {
+      "key": "9f180023-aeea-4a79-ba7a-3c246b449d62",
+      "label": "9f180023-aeea-4a79-ba7a-3c246b449d62",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_operation": [
+    {
+      "key": "content_plan",
+      "label": "content_plan",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    },
+    {
+      "key": "draft",
+      "label": "draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    },
+    {
+      "key": "ideas",
+      "label": "ideas",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_model": [
+    {
+      "key": "openai:gpt-4.1-mini",
+      "label": "openai:gpt-4.1-mini",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_period": [
+    {
+      "period_key": "2026-03",
+      "period_start": "2026-03-14T19:13:47.642229Z",
+      "period_end": "2026-03-14T19:13:48.005917Z",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ]
+}

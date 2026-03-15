@@ -102,6 +102,10 @@ def test_e2e_return_later_open_channel_change_settings_and_regenerate(client):
     assert updated_body['publish_mode'] == 'scheduled'
     assert updated_body['connection_notes']['regeneration_mode'] == 'fresh'
 
+    assert plan['generated_by'] == 'generation-service'
+    assert plan['summary']
+
     regenerated = client.post(f"/api/v1/content-plans/{plan['id']}/regenerate")
     assert regenerated.status_code == 200
     assert regenerated.json()['status'] == 'regenerated'
+    assert regenerated.json()['summary']

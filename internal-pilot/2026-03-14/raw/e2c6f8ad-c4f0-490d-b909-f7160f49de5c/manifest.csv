@@ -1,0 +1,9 @@
+endpoint,filename,bytes,relative_path
+client-cost-dashboard,client-cost-dashboard.json,2427,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-cost-dashboard.json
+client-pricing,client-pricing.json,5273,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-pricing.json
+client-cost-dashboard-report,client-cost-dashboard-report.csv,781,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-cost-dashboard-report.csv
+admin-generation-history,admin-generation-history.json,2782,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-history.json
+admin-generation-usage,admin-generation-usage.json,1986,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-usage.json
+admin-generation-cost-breakdown,admin-generation-cost-breakdown.json,1687,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-cost-breakdown.json
+admin-generation-usage,admin-generation-usage.csv,810,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-usage.csv
+admin-generation-cost-breakdown,admin-generation-cost-breakdown.csv,541,raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-cost-breakdown.csv

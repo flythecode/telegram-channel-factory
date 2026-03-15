@@ -19,6 +19,7 @@
 - `README.md` — как вообще устроен продукт
 - `RELEASE_SMOKE.md` — короткий обязательный smoke path
 - `FINAL_QA_RUNBOOK.md` — полный ручной пользовательский сценарий
+- `LLM_COST_OPERATOR_RUNBOOK.md` — отдельный runbook по LLM-расходам, лимитам, provider degradation и cost anomalies
 - `docker-compose.yml` — какие сервисы должны быть подняты
 - `.env` / production env file — в каком runtime-mode запущен стенд
 - audit history в продукте — что именно делал пользователь

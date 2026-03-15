@@ -25,3 +25,4 @@ class Draft(Base, UUIDPrimaryKeyMixin, TimestampMixin):
 
     content_task = relationship("ContentTask", back_populates="drafts")
     publications = relationship("Publication", back_populates="draft", cascade="all, delete-orphan")
+    llm_generation_events = relationship("LLMGenerationEvent", back_populates="draft")

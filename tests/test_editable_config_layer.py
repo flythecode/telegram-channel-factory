@@ -12,8 +12,8 @@ def test_project_operation_mode_change_affects_new_config_versions_only(client):
     versions_before = client.get(f"/api/v1/projects/{project['id']}/config-versions")
     assert versions_before.status_code == 200
     before_items = versions_before.json()
-    assert before_items[-1]['snapshot_json']['operation_mode'] == 'manual'
-    assert before_items[-1]['snapshot_json']['posting_frequency'] == 'weekly'
+    assert before_items[-1]['snapshot_json']['project']['operation_mode'] == 'manual'
+    assert before_items[-1]['snapshot_json']['project']['posting_frequency'] == 'weekly'
 
     updated = client.patch(
         f"/api/v1/projects/{project['id']}",
@@ -25,9 +25,9 @@ def test_project_operation_mode_change_affects_new_config_versions_only(client):
     assert versions_after.status_code == 200
     after_items = versions_after.json()
     assert len(after_items) == len(before_items) + 1
-    assert after_items[-1]['snapshot_json']['operation_mode'] == 'semi_auto'
-    assert after_items[-1]['snapshot_json']['posting_frequency'] == 'daily'
-    assert before_items[-1]['snapshot_json']['operation_mode'] == 'manual'
+    assert after_items[-1]['snapshot_json']['project']['operation_mode'] == 'semi_auto'
+    assert after_items[-1]['snapshot_json']['project']['posting_frequency'] == 'daily'
+    assert before_items[-1]['snapshot_json']['project']['operation_mode'] == 'manual'
 
 
 def test_agent_prompt_change_affects_new_generation_but_not_existing_draft_metadata(client):
@@ -50,12 +50,11 @@ def test_agent_prompt_change_affects_new_generation_but_not_existing_draft_metad
 
     assert draft_one['generation_metadata']['stage_roles'] == ['strategist', 'researcher', 'writer']
     assert draft_two['generation_metadata']['stage_roles'] == ['strategist', 'researcher', 'writer']
-    assert draft_one['generation_metadata'] == {
-        'preset_code': 'starter_3',
-        'applied_agent_ids': draft_one['generation_metadata']['applied_agent_ids'],
-        'stage_roles': ['strategist', 'researcher', 'writer'],
-        'final_agent_name': draft_one['generation_metadata']['final_agent_name'],
-    }
+    assert draft_one['generation_metadata']['preset_code'] == 'starter_3'
+    assert draft_one['generation_metadata']['applied_agent_ids']
+    assert draft_one['generation_metadata']['final_agent_name']
+    assert draft_one['generation_metadata']['provider']
+    assert draft_one['generation_metadata']['model']
     assert draft_two['generation_metadata']['applied_agent_ids'] == draft_one['generation_metadata']['applied_agent_ids']
 
 

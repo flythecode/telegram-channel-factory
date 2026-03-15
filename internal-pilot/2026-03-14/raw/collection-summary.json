@@ -1,0 +1,116 @@
+{
+  "status": "ok",
+  "collected_at_utc": "2026-03-14T19:15:33.692446+00:00",
+  "clients": [
+    {
+      "client_id": "bee20dc9-f82d-4e39-baf0-788b43b19bd6",
+      "plan_code": "trial",
+      "channel_id": "d74d68ce-9918-4137-b9f4-7c17ab81bcb8",
+      "files": [
+        {
+          "endpoint": "client-cost-dashboard",
+          "filename": "client-cost-dashboard.json",
+          "bytes": "2158",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/client-cost-dashboard.json"
+        },
+        {
+          "endpoint": "client-pricing",
+          "filename": "client-pricing.json",
+          "bytes": "5270",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/client-pricing.json"
+        },
+        {
+          "endpoint": "client-cost-dashboard-report",
+          "filename": "client-cost-dashboard-report.csv",
+          "bytes": "712",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/client-cost-dashboard-report.csv"
+        },
+        {
+          "endpoint": "admin-generation-history",
+          "filename": "admin-generation-history.json",
+          "bytes": "2055",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/admin-generation-history.json"
+        },
+        {
+          "endpoint": "admin-generation-usage",
+          "filename": "admin-generation-usage.json",
+          "bytes": "1492",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/admin-generation-usage.json"
+        },
+        {
+          "endpoint": "admin-generation-cost-breakdown",
+          "filename": "admin-generation-cost-breakdown.json",
+          "bytes": "1458",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/admin-generation-cost-breakdown.json"
+        },
+        {
+          "endpoint": "admin-generation-usage",
+          "filename": "admin-generation-usage.csv",
+          "bytes": "654",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/admin-generation-usage.csv"
+        },
+        {
+          "endpoint": "admin-generation-cost-breakdown",
+          "filename": "admin-generation-cost-breakdown.csv",
+          "bytes": "485",
+          "relative_path": "raw/bee20dc9-f82d-4e39-baf0-788b43b19bd6/admin-generation-cost-breakdown.csv"
+        }
+      ]
+    },
+    {
+      "client_id": "e2c6f8ad-c4f0-490d-b909-f7160f49de5c",
+      "plan_code": "business",
+      "channel_id": "a7d8ba24-0c49-43eb-a56a-c0794c596abf",
+      "files": [
+        {
+          "endpoint": "client-cost-dashboard",
+          "filename": "client-cost-dashboard.json",
+          "bytes": "2427",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-cost-dashboard.json"
+        },
+        {
+          "endpoint": "client-pricing",
+          "filename": "client-pricing.json",
+          "bytes": "5273",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-pricing.json"
+        },
+        {
+          "endpoint": "client-cost-dashboard-report",
+          "filename": "client-cost-dashboard-report.csv",
+          "bytes": "781",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/client-cost-dashboard-report.csv"
+        },
+        {
+          "endpoint": "admin-generation-history",
+          "filename": "admin-generation-history.json",
+          "bytes": "2782",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-history.json"
+        },
+        {
+          "endpoint": "admin-generation-usage",
+          "filename": "admin-generation-usage.json",
+          "bytes": "1986",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-usage.json"
+        },
+        {
+          "endpoint": "admin-generation-cost-breakdown",
+          "filename": "admin-generation-cost-breakdown.json",
+          "bytes": "1687",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-cost-breakdown.json"
+        },
+        {
+          "endpoint": "admin-generation-usage",
+          "filename": "admin-generation-usage.csv",
+          "bytes": "810",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-usage.csv"
+        },
+        {
+          "endpoint": "admin-generation-cost-breakdown",
+          "filename": "admin-generation-cost-breakdown.csv",
+          "bytes": "541",
+          "relative_path": "raw/e2c6f8ad-c4f0-490d-b909-f7160f49de5c/admin-generation-cost-breakdown.csv"
+        }
+      ]
+    }
+  ]
+}

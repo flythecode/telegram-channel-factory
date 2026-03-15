@@ -1,0 +1,67 @@
+{
+  "items": [
+    {
+      "group_by": "channel",
+      "key": "a7d8ba24-0c49-43eb-a56a-c0794c596abf",
+      "label": "a7d8ba24-0c49-43eb-a56a-c0794c596abf",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_tokens": 1350,
+      "total_cost_usd": "0.001350"
+    },
+    {
+      "group_by": "client",
+      "key": "e2c6f8ad-c4f0-490d-b909-f7160f49de5c",
+      "label": "e2c6f8ad-c4f0-490d-b909-f7160f49de5c",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_tokens": 1350,
+      "total_cost_usd": "0.001350"
+    },
+    {
+      "group_by": "model",
+      "key": "openai:gpt-4.1-mini",
+      "label": "openai:gpt-4.1-mini",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_tokens": 1350,
+      "total_cost_usd": "0.001350"
+    },
+    {
+      "group_by": "operation",
+      "key": "draft",
+      "label": "draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_tokens": 440,
+      "total_cost_usd": "0.000440"
+    },
+    {
+      "group_by": "operation",
+      "key": "content_plan",
+      "label": "content_plan",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_tokens": 360,
+      "total_cost_usd": "0.000360"
+    },
+    {
+      "group_by": "operation",
+      "key": "ideas",
+      "label": "ideas",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_tokens": 300,
+      "total_cost_usd": "0.000300"
+    },
+    {
+      "group_by": "operation",
+      "key": "rewrite_draft",
+      "label": "rewrite_draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_tokens": 250,
+      "total_cost_usd": "0.000250"
+    }
+  ]
+}

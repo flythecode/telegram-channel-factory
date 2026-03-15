@@ -23,6 +23,20 @@
 
 ## 3. New entities to add
 
+### Tenant boundary rule
+
+Базовая продуктовая иерархия для Telegram Channel Factory:
+- `client account` / платящий клиент
+- `workspace` как контейнер клиентских проектов в MVP
+- `project` как отдельный channel project
+- `telegram_channel` как operational surface этого проекта
+- `agent_profiles` как project-scoped agent team данного канала/проекта
+
+Следствие для модели данных:
+- один клиент может иметь много `project`;
+- каждый `project` представляет один канал как отдельную контентную систему;
+- агентная команда, generation context и usage attribution должны быть привязаны к `project_id` (и при необходимости к `channel_id`), а не к workspace целиком.
+
 ### User
 Для привязки Telegram-пользователя к проектам.
 

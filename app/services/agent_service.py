@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from app.models.agent_profile import AgentProfile
 from app.models.agent_team_preset import AgentTeamPreset
 from app.models.project import Project
+from app.services.config_versioning import create_project_config_version_for_project_id
 from app.services.crud import get_entity_or_404
+from app.services.tariff_policy import enforce_agent_team_preset_access
 from app.utils.enums import AgentRole
 
 
@@ -53,6 +55,7 @@ def ensure_default_presets(db: Session):
 
 def apply_preset_to_project(db: Session, project_id, preset_code: str):
     project = get_entity_or_404(db, Project, project_id, 'Project not found')
+    enforce_agent_team_preset_access(db, project=project, preset_code=preset_code)
     preset = next((p for p in db.query(AgentTeamPreset).all() if p.code == preset_code), None)
     if preset is None:
         raise ValueError('Preset not found')
@@ -81,6 +84,12 @@ def apply_preset_to_project(db: Session, project_id, preset_code: str):
     db.commit()
     for agent in created:
         db.refresh(agent)
+    create_project_config_version_for_project_id(
+        db,
+        project.id,
+        created_by_user_id=getattr(project, 'owner_user_id', None),
+        change_summary=f'Agent team preset applied: {preset.code}',
+    )
     return created
 
 

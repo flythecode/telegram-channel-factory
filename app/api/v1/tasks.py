@@ -8,13 +8,15 @@ from app.models.content_task import ContentTask
 from app.models.project import Project
 from app.schemas.task import ContentTaskCreate, ContentTaskRead, ContentTaskUpdate
 from app.services.crud import create_entity, get_entity_or_404, update_entity
+from app.services.tariff_policy import enforce_task_frequency_limit
 
 router = APIRouter(tags=["tasks"])
 
 
 @router.post("/projects/{project_id}/tasks", response_model=ContentTaskRead, status_code=status.HTTP_201_CREATED)
 def create_task(project_id: UUID, payload: ContentTaskCreate, db: Session = Depends(get_db)):
-    get_entity_or_404(db, Project, project_id, "Project not found")
+    project = get_entity_or_404(db, Project, project_id, "Project not found")
+    enforce_task_frequency_limit(db, project=project)
     return create_entity(db, ContentTask, payload, project_id=project_id)
 
 

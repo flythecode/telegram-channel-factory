@@ -57,7 +57,10 @@
 - [ ] используется **неотслеживаемый** env file
 - [ ] в env нет inline `TELEGRAM_BOT_TOKEN`
 - [ ] используется `TELEGRAM_BOT_TOKEN_FILE`
-- [ ] secret file существует в ожидаемом месте
+- [ ] Telegram secret file существует в ожидаемом месте
+- [ ] в env нет inline `LLM_API_KEY`
+- [ ] используется `LLM_API_KEY_FILE`
+- [ ] LLM secret file существует в ожидаемом месте
 - [ ] staging/live env не перепутаны
 
 ### Runtime confidence

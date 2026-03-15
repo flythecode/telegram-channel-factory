@@ -20,6 +20,11 @@ if [[ ! -f "${ENV_FILE}" ]]; then
   exit 1
 fi
 
+if grep -Eq '^TELEGRAM_BOT_TOKEN=' "${ENV_FILE}"; then
+  echo "${ENV_FILE} must not contain inline TELEGRAM_BOT_TOKEN; use TELEGRAM_BOT_TOKEN_FILE instead." >&2
+  exit 1
+fi
+
 if grep -Eq '^TELEGRAM_BOT_TOKEN_FILE=' "${ENV_FILE}"; then
   TOKEN_FILE="$(grep -E '^TELEGRAM_BOT_TOKEN_FILE=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
   if [[ -n "${TOKEN_FILE}" ]]; then
@@ -28,6 +33,24 @@ if grep -Eq '^TELEGRAM_BOT_TOKEN_FILE=' "${ENV_FILE}"; then
     fi
     if [[ ! -f "${TOKEN_FILE}" ]]; then
       echo "Telegram token file not found: ${TOKEN_FILE}" >&2
+      exit 1
+    fi
+  fi
+fi
+
+if grep -Eq '^LLM_API_KEY=' "${ENV_FILE}"; then
+  echo "${ENV_FILE} must not contain inline LLM_API_KEY; use LLM_API_KEY_FILE instead." >&2
+  exit 1
+fi
+
+if grep -Eq '^LLM_API_KEY_FILE=' "${ENV_FILE}"; then
+  LLM_KEY_FILE="$(grep -E '^LLM_API_KEY_FILE=' "${ENV_FILE}" | tail -n1 | cut -d= -f2-)"
+  if [[ -n "${LLM_KEY_FILE}" ]]; then
+    if [[ "${LLM_KEY_FILE}" != /* ]]; then
+      LLM_KEY_FILE="${APP_DIR}/${LLM_KEY_FILE}"
+    fi
+    if [[ ! -f "${LLM_KEY_FILE}" ]]; then
+      echo "LLM key file not found: ${LLM_KEY_FILE}" >&2
       exit 1
     fi
   fi

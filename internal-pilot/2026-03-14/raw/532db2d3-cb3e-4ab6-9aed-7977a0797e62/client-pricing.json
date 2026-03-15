@@ -1,0 +1,183 @@
+{
+  "client_id": "532db2d3-cb3e-4ab6-9aed-7977a0797e62",
+  "generated_at": "2026-03-14T19:13:48.822215Z",
+  "target_margin_pct": "70.00",
+  "contingency_pct": "15.00",
+  "platform_overhead_usd": "9.00",
+  "channel_overhead_usd": "2.00",
+  "active_plan_code": "trial",
+  "currency": "USD",
+  "operation_rates": [
+    {
+      "operation_type": "ideas",
+      "label": "Идеи",
+      "successful_events_count": 1,
+      "total_events_count": 1,
+      "average_cost_usd": "0.002500",
+      "target_margin_pct": "70.00",
+      "contingency_pct": "15.00",
+      "recommended_unit_price_usd": "0.010000",
+      "included_share": "0.25"
+    },
+    {
+      "operation_type": "content_plan",
+      "label": "Контент-план",
+      "successful_events_count": 1,
+      "total_events_count": 1,
+      "average_cost_usd": "0.004500",
+      "target_margin_pct": "70.00",
+      "contingency_pct": "15.00",
+      "recommended_unit_price_usd": "0.020000",
+      "included_share": "0.10"
+    },
+    {
+      "operation_type": "draft",
+      "label": "Черновик",
+      "successful_events_count": 1,
+      "total_events_count": 1,
+      "average_cost_usd": "0.006500",
+      "target_margin_pct": "70.00",
+      "contingency_pct": "15.00",
+      "recommended_unit_price_usd": "0.030000",
+      "included_share": "0.40"
+    },
+    {
+      "operation_type": "regenerate_draft",
+      "label": "Регенерация",
+      "successful_events_count": 0,
+      "total_events_count": 0,
+      "average_cost_usd": "0.007000",
+      "target_margin_pct": "70.00",
+      "contingency_pct": "15.00",
+      "recommended_unit_price_usd": "0.030000",
+      "included_share": "0.15"
+    },
+    {
+      "operation_type": "rewrite_draft",
+      "label": "Рерайт",
+      "successful_events_count": 0,
+      "total_events_count": 0,
+      "average_cost_usd": "0.003000",
+      "target_margin_pct": "70.00",
+      "contingency_pct": "15.00",
+      "recommended_unit_price_usd": "0.010000",
+      "included_share": "0.10"
+    }
+  ],
+  "plan_catalog": [
+    {
+      "plan_code": "trial",
+      "label": "Trial",
+      "monthly_fee_usd": "0.00",
+      "included_channels": 1,
+      "included_generations": 25,
+      "max_tasks_per_day": 3,
+      "allowed_preset_codes": [
+        "starter_3"
+      ],
+      "default_preset_code": "starter_3",
+      "access_flag": "trial",
+      "allowed_generation_operations": [
+        "ideas",
+        "content_plan",
+        "draft"
+      ],
+      "blended_generation_cost_usd": "0.005025",
+      "included_cogs_usd": "11.13",
+      "target_margin_pct": "70.00",
+      "projected_gross_margin_usd": "-11.13",
+      "projected_gross_margin_pct": null,
+      "overage_unit_price_usd": "0.030000"
+    },
+    {
+      "plan_code": "starter",
+      "label": "Starter",
+      "monthly_fee_usd": "41.70",
+      "included_channels": 1,
+      "included_generations": 300,
+      "max_tasks_per_day": 12,
+      "allowed_preset_codes": [
+        "starter_3",
+        "balanced_5"
+      ],
+      "default_preset_code": "balanced_5",
+      "access_flag": "paid",
+      "allowed_generation_operations": [
+        "ideas",
+        "content_plan",
+        "draft",
+        "regenerate_draft"
+      ],
+      "blended_generation_cost_usd": "0.005025",
+      "included_cogs_usd": "12.51",
+      "target_margin_pct": "70.00",
+      "projected_gross_margin_usd": "29.19",
+      "projected_gross_margin_pct": "70.00",
+      "overage_unit_price_usd": "0.030000"
+    },
+    {
+      "plan_code": "pro",
+      "label": "Pro",
+      "monthly_fee_usd": "75.13",
+      "included_channels": 3,
+      "included_generations": 1500,
+      "max_tasks_per_day": 40,
+      "allowed_preset_codes": [
+        "starter_3",
+        "balanced_5",
+        "editorial_7"
+      ],
+      "default_preset_code": "balanced_5",
+      "access_flag": "paid",
+      "allowed_generation_operations": [
+        "ideas",
+        "content_plan",
+        "draft",
+        "regenerate_draft",
+        "rewrite_draft",
+        "agent_stage"
+      ],
+      "blended_generation_cost_usd": "0.005025",
+      "included_cogs_usd": "22.54",
+      "target_margin_pct": "70.00",
+      "projected_gross_margin_usd": "52.59",
+      "projected_gross_margin_pct": "70.00",
+      "overage_unit_price_usd": "0.030000"
+    },
+    {
+      "plan_code": "business",
+      "label": "Business",
+      "monthly_fee_usd": "197.17",
+      "included_channels": 10,
+      "included_generations": 6000,
+      "max_tasks_per_day": 150,
+      "allowed_preset_codes": [
+        "starter_3",
+        "balanced_5",
+        "editorial_7"
+      ],
+      "default_preset_code": "editorial_7",
+      "access_flag": "paid",
+      "allowed_generation_operations": [
+        "ideas",
+        "content_plan",
+        "draft",
+        "regenerate_draft",
+        "rewrite_draft",
+        "agent_stage"
+      ],
+      "blended_generation_cost_usd": "0.005025",
+      "included_cogs_usd": "59.15",
+      "target_margin_pct": "70.00",
+      "projected_gross_margin_usd": "138.02",
+      "projected_gross_margin_pct": "70.00",
+      "overage_unit_price_usd": "0.030000"
+    }
+  ],
+  "assumptions": {
+    "billing_cycle": "monthly",
+    "success_events_sample_size": 3,
+    "all_events_sample_size": 3,
+    "blended_generation_cost_usd": "0.005025"
+  }
+}

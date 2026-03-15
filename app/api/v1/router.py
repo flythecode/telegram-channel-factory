@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.v1.admin import router as admin_router
 from app.api.v1.agents import router as agents_router
 from app.api.v1.channels import router as channels_router
 from app.api.v1.content_plans import router as content_plans_router
@@ -12,6 +13,7 @@ from app.api.v1.tasks import router as tasks_router
 from app.api.v1.users import router as users_router
 
 api_router = APIRouter()
+api_router.include_router(admin_router)
 api_router.include_router(users_router)
 api_router.include_router(project_config_versions_router)
 api_router.include_router(audit_events_router)

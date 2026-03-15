@@ -24,6 +24,10 @@ class DraftUpdate(BaseModel):
     status: DraftStatus | None = None
 
 
+class DraftRewriteRequest(BaseModel):
+    rewrite_prompt: str = Field(..., min_length=1, max_length=2000)
+
+
 class DraftRead(TimestampedSchema):
     content_task_id: UUID
     version: int

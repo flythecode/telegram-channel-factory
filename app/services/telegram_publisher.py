@@ -29,6 +29,36 @@ class TelegramPublisher(PublisherInterface):
     def _build_text(self, publication: Publication) -> str:
         return publication.draft.text
 
+    def _resolve_media_urls(self, publication: Publication) -> list[str]:
+        metadata = publication.generation_metadata or {}
+        media = metadata.get('media')
+        if isinstance(media, list):
+            urls = [
+                item.get('url')
+                for item in media
+                if isinstance(item, dict)
+                and item.get('type') in {None, 'image', 'photo'}
+                and isinstance(item.get('url'), str)
+                and item.get('url').strip()
+            ]
+            if urls:
+                return urls
+
+        image_urls = metadata.get('image_urls')
+        if isinstance(image_urls, list):
+            return [item for item in image_urls if isinstance(item, str) and item.strip()]
+        return []
+
+    def _telegram_request(self, method: str, payload: dict):
+        req = request.Request(
+            url=f'https://api.telegram.org/bot{settings.telegram_bot_token}/{method}',
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'},
+            method='POST',
+        )
+        with request.urlopen(req, timeout=settings.telegram_request_timeout_seconds) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+
     def _extract_retry_after(self, payload: dict | None) -> float | None:
         if not isinstance(payload, dict):
             return None
@@ -82,29 +112,47 @@ class TelegramPublisher(PublisherInterface):
             return self.fail(db, publication_id, str(exc))
 
         text = self._build_text(publication)
+        media_urls = self._resolve_media_urls(publication)
         logger.info(
             "telegram publish attempt",
             extra={
                 "publication_id": str(publication.id),
                 "chat_id": chat_id,
                 "text_length": len(text),
+                "media_count": len(media_urls),
             },
         )
-        payload = json.dumps({
-            'chat_id': chat_id,
-            'text': text,
-            'disable_web_page_preview': True,
-        }).encode('utf-8')
-        req = request.Request(
-            url=f'https://api.telegram.org/bot{settings.telegram_bot_token}/sendMessage',
-            data=payload,
-            headers={'Content-Type': 'application/json'},
-            method='POST',
-        )
+
+        if media_urls:
+            method = 'sendMediaGroup' if len(media_urls) > 1 else 'sendPhoto'
+            if len(media_urls) > 1:
+                payload = {
+                    'chat_id': chat_id,
+                    'media': [
+                        {
+                            'type': 'photo',
+                            'media': url,
+                            **({'caption': text} if index == 0 else {}),
+                        }
+                        for index, url in enumerate(media_urls)
+                    ],
+                }
+            else:
+                payload = {
+                    'chat_id': chat_id,
+                    'photo': media_urls[0],
+                    'caption': text,
+                }
+        else:
+            method = 'sendMessage'
+            payload = {
+                'chat_id': chat_id,
+                'text': text,
+                'disable_web_page_preview': True,
+            }
 
         try:
-            with request.urlopen(req, timeout=settings.telegram_request_timeout_seconds) as resp:
-                body = json.loads(resp.read().decode('utf-8'))
+            body = self._telegram_request(method, payload)
         except error.HTTPError as exc:
             detail = exc.read().decode('utf-8', errors='ignore')
             parsed_detail = None
@@ -130,7 +178,11 @@ class TelegramPublisher(PublisherInterface):
             return self.fail(db, publication_id, reason)
 
         result = body.get('result', {})
-        return self._mark_sent(db, publication, result.get('message_id'))
+        if isinstance(result, list):
+            message_id = result[0].get('message_id') if result and isinstance(result[0], dict) else None
+        else:
+            message_id = result.get('message_id')
+        return self._mark_sent(db, publication, message_id)
 
     def fail(self, db: Session, publication_id, reason: str = 'telegram publish failure') -> Publication:
         publication = get_entity_or_404(db, Publication, publication_id, 'Publication not found')

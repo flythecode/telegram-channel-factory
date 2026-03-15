@@ -23,6 +23,7 @@
 - `AGENT_SETTINGS_V1.md`
 - `ORCHESTRATION_ENGINE_V1.md`
 - `PROMPT_TEMPLATE_MANAGEMENT_V1.md`
+- `MULTI_TENANT_LLM_ARCHITECTURE_V1.md`
 - а также screen / test / deploy / release документы проекта
 
 С этого момента именно **этот файл** задаёт порядок реализации.

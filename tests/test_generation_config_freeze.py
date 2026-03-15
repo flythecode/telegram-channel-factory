@@ -19,9 +19,8 @@ def test_new_agent_configuration_applies_only_to_new_generations(client):
     assert draft_two['generation_metadata']['preset_code'] == 'starter_3'
     assert draft_two['generation_metadata']['applied_agent_ids'] == draft_one['generation_metadata']['applied_agent_ids']
 
-    assert draft_one['generation_metadata'] == {
-        'preset_code': 'starter_3',
-        'applied_agent_ids': draft_one['generation_metadata']['applied_agent_ids'],
-        'stage_roles': ['strategist', 'researcher', 'writer'],
-        'final_agent_name': draft_one['generation_metadata']['final_agent_name'],
-    }
+    assert draft_one['generation_metadata']['preset_code'] == 'starter_3'
+    assert draft_one['generation_metadata']['applied_agent_ids']
+    assert draft_one['generation_metadata']['final_agent_name']
+    assert draft_one['generation_metadata']['provider']
+    assert draft_one['generation_metadata']['model']

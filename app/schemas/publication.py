@@ -18,6 +18,7 @@ class PublicationUpdate(BaseModel):
     external_message_id: str | None = Field(default=None, max_length=255)
     error_message: str | None = None
     status: PublicationStatus | None = None
+    generation_metadata: dict | None = None
 
 
 class PublicationRead(TimestampedSchema):
@@ -28,3 +29,4 @@ class PublicationRead(TimestampedSchema):
     external_message_id: str | None
     error_message: str | None
     status: PublicationStatus
+    generation_metadata: dict | None

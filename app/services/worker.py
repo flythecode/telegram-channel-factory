@@ -5,7 +5,10 @@ from time import perf_counter
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.publication import Publication
+from app.services.generation_observability import provider_health_snapshot
+from app.services.generation_worker_pool import process_generation_worker_pool
 from app.services.runtime_hardening import (
     dispatch_publication_with_retry,
     mark_publication_failed_after_runtime_error,
@@ -21,6 +24,10 @@ class WorkerBatchSummary:
     dispatchable: int
     processed: int
     failed: int
+    generation_jobs_processed: int
+    generation_jobs_failed: int
+    generation_projects_seen: int
+    generation_slots_used: int
     started_at: str
     finished_at: str
     duration_ms: float
@@ -59,6 +66,11 @@ def process_publication_batch(db: Session) -> int:
 def process_publication_batch_with_summary(db: Session) -> WorkerBatchSummary:
     started_at = datetime.now(timezone.utc)
     started_perf = perf_counter()
+    generation_summary = process_generation_worker_pool(
+        db,
+        pool_size=settings.generation_worker_pool_size,
+        batch_limit=settings.generation_job_batch_limit,
+    )
     dispatchable_items = collect_dispatchable_publications(db)
     processed = 0
     failed = 0
@@ -89,9 +101,13 @@ def process_publication_batch_with_summary(db: Session) -> WorkerBatchSummary:
         dispatchable=len(dispatchable_items),
         processed=processed,
         failed=failed,
+        generation_jobs_processed=generation_summary.processed,
+        generation_jobs_failed=generation_summary.failed,
+        generation_projects_seen=generation_summary.projects_seen,
+        generation_slots_used=generation_summary.slots_used,
         started_at=started_at.isoformat(),
         finished_at=finished_at.isoformat(),
         duration_ms=round((perf_counter() - started_perf) * 1000, 2),
     )
-    logger.info("worker batch complete", extra=summary.to_dict())
+    logger.info("worker batch complete", extra=summary.to_dict() | {'generation_provider_health': provider_health_snapshot()})
     return summary

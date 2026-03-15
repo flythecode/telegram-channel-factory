@@ -1,0 +1,8 @@
+group_by,key,label,events_count,successful_events_count,total_tokens,total_cost_usd
+channel,757a32f5-5e21-48fc-9520-77bd68289133,757a32f5-5e21-48fc-9520-77bd68289133,4,4,0,0.000000
+client,6dc8b0c2-9c99-4a16-8a1a-8cb0e802d755,6dc8b0c2-9c99-4a16-8a1a-8cb0e802d755,4,4,0,0.000000
+model,openai:gpt-4.1-mini,openai:gpt-4.1-mini,4,4,0,0.000000
+operation,content_plan,content_plan,1,1,0,0.000000
+operation,draft,draft,1,1,0,0.000000
+operation,ideas,ideas,1,1,0,0.000000
+operation,rewrite_draft,rewrite_draft,1,1,0,0.000000

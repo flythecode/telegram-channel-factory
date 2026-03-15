@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, String
+from sqlalchemy import Date, Enum as SqlEnum, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -21,6 +21,7 @@ class ContentPlan(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     status: Mapped[str] = mapped_column(String(100), nullable=False, default="generated")
     generated_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     project = relationship("Project", back_populates="content_plans")
     content_tasks = relationship("ContentTask", back_populates="content_plan", cascade="all, delete-orphan")

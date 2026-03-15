@@ -31,3 +31,5 @@ class Workspace(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         foreign_keys=[created_by_user_id],
     )
     projects = relationship("Project", back_populates="workspace", cascade="all, delete-orphan")
+
+    client_accounts = relationship("ClientAccount", back_populates="workspace")

@@ -20,3 +20,5 @@ def test_live_template_documents_secret_file_option():
     live_template = (ROOT / '.env.live.example').read_text()
     assert 'TELEGRAM_BOT_TOKEN_FILE=' in live_template
     assert 'secrets/telegram_bot_token' in live_template
+    assert 'LLM_API_KEY_FILE=' in live_template
+    assert 'secrets/llm_api_key' in live_template

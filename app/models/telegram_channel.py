@@ -25,4 +25,6 @@ class TelegramChannel(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     project = relationship("Project", back_populates="telegram_channels")
+    agent_team_runtimes = relationship("AgentTeamRuntime", back_populates="telegram_channel")
     publications = relationship("Publication", back_populates="telegram_channel")
+    llm_generation_events = relationship("LLMGenerationEvent", back_populates="telegram_channel")

@@ -28,6 +28,7 @@ class ContentTaskUpdate(BaseModel):
     brief: str | None = None
     scheduled_for: datetime | None = None
     status: ContentTaskStatus | None = None
+    generation_metadata: dict | None = None
 
 
 class ContentTaskRead(TimestampedSchema):
@@ -40,3 +41,4 @@ class ContentTaskRead(TimestampedSchema):
     brief: str | None
     scheduled_for: datetime | None
     status: ContentTaskStatus
+    generation_metadata: dict | None

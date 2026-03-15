@@ -1,0 +1,93 @@
+{
+  "client_id": "6dc8b0c2-9c99-4a16-8a1a-8cb0e802d755",
+  "generated_at": "2026-03-14T19:14:10.484573Z",
+  "billing_period_start": null,
+  "billing_period_end": null,
+  "totals": {
+    "key": "total",
+    "label": "All generation",
+    "events_count": 4,
+    "successful_events_count": 4,
+    "total_prompt_tokens": 0,
+    "total_completion_tokens": 0,
+    "total_tokens": 0,
+    "total_cost_usd": "0.000000"
+  },
+  "by_channel": [
+    {
+      "key": "757a32f5-5e21-48fc-9520-77bd68289133",
+      "label": "757a32f5-5e21-48fc-9520-77bd68289133",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_operation": [
+    {
+      "key": "content_plan",
+      "label": "content_plan",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    },
+    {
+      "key": "draft",
+      "label": "draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    },
+    {
+      "key": "ideas",
+      "label": "ideas",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    },
+    {
+      "key": "rewrite_draft",
+      "label": "rewrite_draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_model": [
+    {
+      "key": "openai:gpt-4.1-mini",
+      "label": "openai:gpt-4.1-mini",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ],
+  "by_period": [
+    {
+      "period_key": "2026-03",
+      "period_start": "2026-03-14T19:14:09.837770Z",
+      "period_end": "2026-03-14T19:14:10.450098Z",
+      "events_count": 4,
+      "successful_events_count": 4,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000"
+    }
+  ]
+}

@@ -12,6 +12,9 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     workspace_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True
     )
+    client_account_id: Mapped[UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("client_accounts.id", ondelete="SET NULL"), nullable=True
+    )
     owner_user_id: Mapped[UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -36,9 +39,12 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
 
     workspace = relationship("Workspace", back_populates="projects")
+    client_account = relationship("ClientAccount", back_populates="projects")
     owner_user = relationship("User", back_populates="owned_projects", foreign_keys=[owner_user_id])
     created_by_user = relationship("User", back_populates="created_projects", foreign_keys=[created_by_user_id])
     telegram_channels = relationship("TelegramChannel", back_populates="project", cascade="all, delete-orphan")
     agent_profiles = relationship("AgentProfile", back_populates="project", cascade="all, delete-orphan")
+    agent_team_runtimes = relationship("AgentTeamRuntime", back_populates="project", cascade="all, delete-orphan")
     content_plans = relationship("ContentPlan", back_populates="project", cascade="all, delete-orphan")
     content_tasks = relationship("ContentTask", back_populates="project", cascade="all, delete-orphan")
+    llm_generation_events = relationship("LLMGenerationEvent", back_populates="project")

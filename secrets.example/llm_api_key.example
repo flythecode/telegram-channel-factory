@@ -1,0 +1,3 @@
+# Put the real LLM provider API key here in the real untracked secrets directory.
+# Example target path on server: /etc/telegram-channel-factory/secrets/llm_api_key
+# Example local path (ignored by git): ./secrets/llm_api_key

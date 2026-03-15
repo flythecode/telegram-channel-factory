@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum as SqlEnum, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -21,6 +21,7 @@ class Publication(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     external_message_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    generation_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     status: Mapped[PublicationStatus] = mapped_column(
         SqlEnum(PublicationStatus, name="publication_status", values_callable=lambda e: [m.value for m in e]),
         nullable=False,

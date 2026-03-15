@@ -1,0 +1,9 @@
+section,key,label,events_count,successful_events_count,total_prompt_tokens,total_completion_tokens,total_tokens,total_cost_usd,period_key,period_start,period_end
+totals,total,All generation,4,4,820,530,1350,0.001350,,,
+by_channel,a7d8ba24-0c49-43eb-a56a-c0794c596abf,a7d8ba24-0c49-43eb-a56a-c0794c596abf,4,4,820,530,1350,0.001350,,,
+by_operation,draft,draft,1,1,260,180,440,0.000440,,,
+by_operation,content_plan,content_plan,1,1,220,140,360,0.000360,,,
+by_operation,ideas,ideas,1,1,180,120,300,0.000300,,,
+by_operation,rewrite_draft,rewrite_draft,1,1,160,90,250,0.000250,,,
+by_model,openai:gpt-4.1-mini,openai:gpt-4.1-mini,4,4,820,530,1350,0.001350,,,
+by_period,2026-03,2026-03,4,4,,,1350,0.001350,2026-03,2026-03-14 19:15:33.632427+00:00,2026-03-14 19:15:33.636338+00:00

@@ -24,6 +24,7 @@ from app.core.database import get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models.content_task import ContentTask  # noqa: E402
 from app.models.draft import Draft  # noqa: E402
+from app.models.project import Project  # noqa: E402
 from app.models.publication import Publication  # noqa: E402
 from app.models.telegram_channel import TelegramChannel  # noqa: E402
 
@@ -73,6 +74,10 @@ class FakeSession:
     def _link_relationships(self, obj: Any):
         if isinstance(obj, Draft):
             obj.content_task = self.get(ContentTask, obj.content_task_id)
+        elif isinstance(obj, ContentTask):
+            obj.project = self.get(Project, obj.project_id)
+        elif isinstance(obj, TelegramChannel):
+            obj.project = self.get(Project, obj.project_id)
         elif isinstance(obj, Publication):
             obj.draft = self.get(Draft, obj.draft_id)
             obj.telegram_channel = self.get(TelegramChannel, obj.telegram_channel_id)

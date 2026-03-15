@@ -1,0 +1,51 @@
+{
+  "project": "telegram-channel-factory",
+  "backlogItem": 136,
+  "title": "Провести второй раунд реальных пользовательских тестов после исправлений",
+  "date": "2026-03-14",
+  "readyPacket": true,
+  "participantFiles": [
+    {
+      "path": "./PARTICIPANT_01.md",
+      "filled": false
+    },
+    {
+      "path": "./PARTICIPANT_02.md",
+      "filled": false
+    },
+    {
+      "path": "./PARTICIPANT_03.md",
+      "filled": false
+    }
+  ],
+  "completionCriteria": {
+    "minRealParticipants": 2,
+    "separateResultPerParticipant": true,
+    "scenarios": [
+      "A",
+      "B",
+      "C"
+    ],
+    "needsObservedUxFindings": true,
+    "needsSelfServeVerdict": true
+  },
+  "currentStatus": "blocked_on_real_participants",
+  "lastVerifiedAt": "2026-03-15T12:53:50Z",
+  "latestEvidence": [
+    "template_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_01.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_02.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "PARTICIPANT_03.md_sha256=60ff92f6a29675c19dd70ed744896b3ea0d94dc34faf80eb7b48e540176bee90",
+    "filled_participant_files=0"
+  ],
+  "blockers": [
+    "No invited real users are available in this workspace",
+    "External contact cannot be initiated without explicit approval"
+  ],
+  "exactNextActions": [
+    "Invite at least two real participants after explicit approval",
+    "Run second-round scenarios A/B/C on the test bot without off-script guidance",
+    "Fill one participant result file per person",
+    "Synthesize findings into the dated report and confirm self-serve UX verdict"
+  ]
+}

@@ -29,6 +29,10 @@ def test_process_publication_batch_with_summary_reports_counts(client, fake_db):
     assert summary.dispatchable >= 1
     assert summary.processed == 1
     assert summary.failed == 0
+    assert summary.generation_jobs_processed == 0
+    assert summary.generation_jobs_failed == 0
+    assert summary.generation_projects_seen == 0
+    assert summary.generation_slots_used == 0
     assert summary.duration_ms >= 0
 
 

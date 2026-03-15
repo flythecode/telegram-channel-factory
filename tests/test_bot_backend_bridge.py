@@ -16,6 +16,8 @@ def test_bot_bridge_can_create_project_apply_preset_connect_channel_and_plan(fak
     assert len(agents) == 3
     assert channel.is_connected is True
     assert plan.project_id == project.id
+    assert plan.generated_by == 'generation-service'
+    assert plan.summary is not None
 
 
 def test_bot_bridge_supports_reopen_and_update_flow(fake_db):

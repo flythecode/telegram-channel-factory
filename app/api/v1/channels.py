@@ -10,13 +10,15 @@ from app.schemas.channel import TelegramChannelCreate, TelegramChannelRead, Tele
 from app.schemas.channel_connection import ChannelConnectionCheckRead
 from app.services.channel_service import check_channel_connection, connect_channel
 from app.services.crud import create_entity, get_entity_or_404, update_entity
+from app.services.tariff_policy import enforce_channel_limit
 
 router = APIRouter(tags=["channels"])
 
 
 @router.post("/projects/{project_id}/channels", response_model=TelegramChannelRead, status_code=status.HTTP_201_CREATED)
 def create_channel(project_id: UUID, payload: TelegramChannelCreate, db: Session = Depends(get_db)):
-    get_entity_or_404(db, Project, project_id, "Project not found")
+    project = get_entity_or_404(db, Project, project_id, "Project not found")
+    enforce_channel_limit(db, project=project)
     return create_entity(db, TelegramChannel, payload, project_id=project_id)
 
 

@@ -22,7 +22,7 @@ class DummyResponse:
 
 
 
-def _create_publication(client, with_username=True):
+def _create_publication(client, with_username=True, draft_generation_metadata=None):
     project = client.post('/api/v1/projects', json={'name': 'Telegram Project', 'language': 'ru'}).json()
     channel_payload = {
         'channel_title': 'Telegram Channel',
@@ -37,6 +37,13 @@ def _create_publication(client, with_username=True):
     ).json()
     task = client.post(f"/api/v1/projects/{project['id']}/tasks", json={'title': 'Telegram Task'}).json()
     draft = client.post(f"/api/v1/tasks/{task['id']}/drafts", json={'text': 'Telegram body', 'version': 1}).json()
+    patch_payload = {'text': 'Telegram body'}
+    if draft_generation_metadata is not None:
+        patch_payload['generation_metadata'] = draft_generation_metadata
+    draft = client.patch(
+        f"/api/v1/drafts/{draft['id']}",
+        json=patch_payload,
+    ).json()
     client.post(f"/api/v1/drafts/{draft['id']}/approve")
     publication = client.post(
         f"/api/v1/drafts/{draft['id']}/publications",
@@ -200,6 +207,65 @@ def test_telegram_publisher_http_503_is_retryable(client, fake_db, monkeypatch):
         TelegramPublisher().publish(fake_db, publication['id'])
 
     assert 'Telegram HTTP 503' in str(exc.value)
+
+
+
+def test_telegram_publisher_publish_photo_success_updates_publication(client, fake_db, monkeypatch):
+    from app.services import telegram_publisher as telegram_module
+
+    _task, publication = _create_publication(
+        client,
+        draft_generation_metadata={'image_urls': ['https://example.com/image-1.jpg']},
+    )
+    monkeypatch.setattr(telegram_module.settings, 'telegram_bot_token', 'token')
+
+    captured = {}
+
+    def fake_urlopen(req, timeout=20):
+        import json
+        captured['url'] = req.full_url
+        captured['payload'] = json.loads(req.data.decode('utf-8'))
+        return DummyResponse({'ok': True, 'result': {'message_id': 98765}})
+
+    monkeypatch.setattr(telegram_module.request, 'urlopen', fake_urlopen)
+
+    result = TelegramPublisher().publish(fake_db, publication['id'])
+
+    assert result.status.value == 'sent'
+    assert result.external_message_id == '98765'
+    assert captured['url'].endswith('/sendPhoto')
+    assert captured['payload']['photo'] == 'https://example.com/image-1.jpg'
+    assert captured['payload']['caption'] == 'Telegram body'
+
+
+
+def test_telegram_publisher_publish_media_group_success_updates_publication(client, fake_db, monkeypatch):
+    from app.services import telegram_publisher as telegram_module
+
+    _task, publication = _create_publication(
+        client,
+        draft_generation_metadata={'image_urls': ['https://example.com/image-1.jpg', 'https://example.com/image-2.jpg']},
+    )
+    monkeypatch.setattr(telegram_module.settings, 'telegram_bot_token', 'token')
+
+    captured = {}
+
+    def fake_urlopen(req, timeout=20):
+        import json
+        captured['url'] = req.full_url
+        captured['payload'] = json.loads(req.data.decode('utf-8'))
+        return DummyResponse({'ok': True, 'result': [{'message_id': 222}, {'message_id': 223}]})
+
+    monkeypatch.setattr(telegram_module.request, 'urlopen', fake_urlopen)
+
+    result = TelegramPublisher().publish(fake_db, publication['id'])
+
+    assert result.status.value == 'sent'
+    assert result.external_message_id == '222'
+    assert captured['url'].endswith('/sendMediaGroup')
+    assert captured['payload']['media'][0]['type'] == 'photo'
+    assert captured['payload']['media'][0]['caption'] == 'Telegram body'
+    assert 'caption' not in captured['payload']['media'][1]
 
 
 

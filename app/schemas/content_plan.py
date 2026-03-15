@@ -13,6 +13,7 @@ class ContentPlanBase(BaseModel):
     end_date: date
     status: str = "generated"
     generated_by: str | None = Field(default=None, max_length=255)
+    summary: str | None = None
 
 
 class ContentPlanCreate(ContentPlanBase):
@@ -25,6 +26,7 @@ class ContentPlanUpdate(BaseModel):
     end_date: date | None = None
     status: str | None = None
     generated_by: str | None = Field(default=None, max_length=255)
+    summary: str | None = None
 
 
 class ContentPlanRead(TimestampedSchema):
@@ -34,3 +36,4 @@ class ContentPlanRead(TimestampedSchema):
     end_date: date
     status: str
     generated_by: str | None
+    summary: str | None

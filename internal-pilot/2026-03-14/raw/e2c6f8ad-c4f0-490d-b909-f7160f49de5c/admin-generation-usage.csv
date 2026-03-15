@@ -1,0 +1,5 @@
+client_id,project_id,channel_id,operation_type,events_count,successful_events_count,failed_events_count,total_prompt_tokens,total_completion_tokens,total_tokens,total_cost_usd,average_latency_ms
+e2c6f8ad-c4f0-490d-b909-f7160f49de5c,dcbaace1-772d-4ffe-b6aa-49833a7db194,a7d8ba24-0c49-43eb-a56a-c0794c596abf,content_plan,1,1,0,220,140,360,0.000360,1.00
+e2c6f8ad-c4f0-490d-b909-f7160f49de5c,dcbaace1-772d-4ffe-b6aa-49833a7db194,a7d8ba24-0c49-43eb-a56a-c0794c596abf,draft,1,1,0,260,180,440,0.000440,1.00
+e2c6f8ad-c4f0-490d-b909-f7160f49de5c,dcbaace1-772d-4ffe-b6aa-49833a7db194,a7d8ba24-0c49-43eb-a56a-c0794c596abf,ideas,1,1,0,180,120,300,0.000300,1.00
+e2c6f8ad-c4f0-490d-b909-f7160f49de5c,dcbaace1-772d-4ffe-b6aa-49833a7db194,a7d8ba24-0c49-43eb-a56a-c0794c596abf,rewrite_draft,1,1,0,160,90,250,0.000250,1.00

@@ -69,8 +69,9 @@ class BotService:
         agents_count: int,
         content_plans_count: int = 0,
         drafts_count: int = 0,
+        generation_summary: dict | None = None,
     ) -> BotScreen:
-        data = channel_dashboard_screen(title, mode, agents_count, content_plans_count, drafts_count)
+        data = channel_dashboard_screen(title, mode, agents_count, content_plans_count, drafts_count, generation_summary)
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
     def channel_settings_screen(
@@ -89,20 +90,20 @@ class BotService:
         data = channel_agents_screen(agents or [])
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
-    def channel_content_plan_screen(self, plans: list[ContentPlanSummary] | None = None, tasks_total: int = 0) -> BotScreen:
-        data = channel_content_plan_screen(plans or [], tasks_total)
+    def channel_content_plan_screen(self, plans: list[ContentPlanSummary] | None = None, tasks_total: int = 0, generation_summary: dict | None = None) -> BotScreen:
+        data = channel_content_plan_screen(plans or [], tasks_total, generation_summary)
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
     def channel_drafts_screen(self, drafts: list[DraftSummary] | None = None) -> BotScreen:
         data = channel_drafts_screen(drafts or [])
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
-    def draft_detail_screen(self, title: str, status: str, version: int, text: str, created_by_agent: str | None = None) -> BotScreen:
-        data = draft_detail_screen(title, status, version, text, created_by_agent)
+    def draft_detail_screen(self, title: str, status: str, version: int, text: str, created_by_agent: str | None = None, generation_summary: dict | None = None) -> BotScreen:
+        data = draft_detail_screen(title, status, version, text, created_by_agent, generation_summary)
         return BotScreen(text=data['text'], buttons=data['buttons'])
 
-    def draft_action_result_screen(self, action: str, title: str, status: str, version: int, text: str, created_by_agent: str | None = None) -> BotScreen:
-        data = draft_detail_screen(title, status, version, text, created_by_agent)
+    def draft_action_result_screen(self, action: str, title: str, status: str, version: int, text: str, created_by_agent: str | None = None, generation_summary: dict | None = None) -> BotScreen:
+        data = draft_detail_screen(title, status, version, text, created_by_agent, generation_summary)
         return BotScreen(text=f'{human_action_label(action)}.\n\n{data["text"]}', buttons=data['buttons'])
 
     def publications_screen(self, publications: list[PublicationSummary] | None = None) -> BotScreen:
@@ -190,21 +191,21 @@ class BotService:
             text = (
                 'Бот найден, но не является администратором канала.\n'
                 f'Канал: {channel_ref or "—"}\n'
-                'Выдай боту права администратора и повтори проверку.'
+                'Следующий шаг один: открой канал → Управление каналом → Администраторы, добавь бота и потом повтори проверку.'
             )
             buttons = [["Повторить инструкцию"], ["Проверить подключение"], ["Главное меню"]]
         elif status == 'missing_post_permission':
             text = (
                 'Бот добавлен, но не может публиковать сообщения.\n'
                 f'Канал: {channel_ref or "—"}\n'
-                'Включи право на публикацию сообщений и повтори проверку.'
+                'Следующий шаг один: в правах администратора включи публикацию сообщений и повтори проверку.'
             )
             buttons = [["Повторить инструкцию"], ["Проверить подключение"], ["Главное меню"]]
         elif status == 'channel_not_found':
             text = (
                 'Канал не найден или username указан неверно.\n'
                 f'Канал: {channel_ref or "—"}\n'
-                'Проверь @username канала и попробуй снова.'
+                'Следующий шаг один: проверь публичный @username канала, пришли его заново в формате @my_channel и потом повтори проверку.'
             )
             buttons = [["Повторить инструкцию"], ["Главное меню"]]
         else:

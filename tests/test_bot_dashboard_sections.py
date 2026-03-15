@@ -12,6 +12,15 @@ from app.models.draft import Draft
 from app.schemas.project import ProjectCreate, ProjectUpdate
 from app.services.identity import TelegramIdentity
 from app.utils.enums import DraftStatus
+from app.bot.screens import channel_content_plan_screen
+
+
+
+def test_empty_content_plan_screen_offers_explicit_create_button():
+    screen = channel_content_plan_screen([], 0)
+    flat = [item for row in screen['buttons'] for item in row]
+    assert 'Создать контент-план' in flat
+    assert '🗂 План' not in flat
 
 
 

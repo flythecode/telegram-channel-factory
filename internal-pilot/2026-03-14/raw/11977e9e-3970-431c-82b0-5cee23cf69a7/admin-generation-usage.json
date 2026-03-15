@@ -1,0 +1,60 @@
+{
+  "items": [
+    {
+      "client_id": "11977e9e-3970-431c-82b0-5cee23cf69a7",
+      "project_id": "c57e0741-fd74-4ded-b844-c28a6fc16bbf",
+      "channel_id": "02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05",
+      "operation_type": "content_plan",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "failed_events_count": 0,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000",
+      "average_latency_ms": "0.00"
+    },
+    {
+      "client_id": "11977e9e-3970-431c-82b0-5cee23cf69a7",
+      "project_id": "c57e0741-fd74-4ded-b844-c28a6fc16bbf",
+      "channel_id": "02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05",
+      "operation_type": "draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "failed_events_count": 0,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000",
+      "average_latency_ms": "0.00"
+    },
+    {
+      "client_id": "11977e9e-3970-431c-82b0-5cee23cf69a7",
+      "project_id": "c57e0741-fd74-4ded-b844-c28a6fc16bbf",
+      "channel_id": "02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05",
+      "operation_type": "ideas",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "failed_events_count": 0,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000",
+      "average_latency_ms": "0.00"
+    },
+    {
+      "client_id": "11977e9e-3970-431c-82b0-5cee23cf69a7",
+      "project_id": "c57e0741-fd74-4ded-b844-c28a6fc16bbf",
+      "channel_id": "02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05",
+      "operation_type": "rewrite_draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "failed_events_count": 0,
+      "total_prompt_tokens": 0,
+      "total_completion_tokens": 0,
+      "total_tokens": 0,
+      "total_cost_usd": "0.000000",
+      "average_latency_ms": "0.00"
+    }
+  ]
+}

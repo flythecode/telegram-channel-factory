@@ -1,0 +1,83 @@
+{
+  "client_id": "bee20dc9-f82d-4e39-baf0-788b43b19bd6",
+  "generated_at": "2026-03-14T19:15:33.644408Z",
+  "billing_period_start": null,
+  "billing_period_end": null,
+  "totals": {
+    "key": "total",
+    "label": "All generation",
+    "events_count": 3,
+    "successful_events_count": 3,
+    "total_prompt_tokens": 660,
+    "total_completion_tokens": 440,
+    "total_tokens": 1100,
+    "total_cost_usd": "0.001100"
+  },
+  "by_channel": [
+    {
+      "key": "d74d68ce-9918-4137-b9f4-7c17ab81bcb8",
+      "label": "d74d68ce-9918-4137-b9f4-7c17ab81bcb8",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_prompt_tokens": 660,
+      "total_completion_tokens": 440,
+      "total_tokens": 1100,
+      "total_cost_usd": "0.001100"
+    }
+  ],
+  "by_operation": [
+    {
+      "key": "draft",
+      "label": "draft",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 260,
+      "total_completion_tokens": 180,
+      "total_tokens": 440,
+      "total_cost_usd": "0.000440"
+    },
+    {
+      "key": "content_plan",
+      "label": "content_plan",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 220,
+      "total_completion_tokens": 140,
+      "total_tokens": 360,
+      "total_cost_usd": "0.000360"
+    },
+    {
+      "key": "ideas",
+      "label": "ideas",
+      "events_count": 1,
+      "successful_events_count": 1,
+      "total_prompt_tokens": 180,
+      "total_completion_tokens": 120,
+      "total_tokens": 300,
+      "total_cost_usd": "0.000300"
+    }
+  ],
+  "by_model": [
+    {
+      "key": "openai:gpt-4.1-mini",
+      "label": "openai:gpt-4.1-mini",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_prompt_tokens": 660,
+      "total_completion_tokens": 440,
+      "total_tokens": 1100,
+      "total_cost_usd": "0.001100"
+    }
+  ],
+  "by_period": [
+    {
+      "period_key": "2026-03",
+      "period_start": "2026-03-14T19:15:33.627376Z",
+      "period_end": "2026-03-14T19:15:33.630744Z",
+      "events_count": 3,
+      "successful_events_count": 3,
+      "total_tokens": 1100,
+      "total_cost_usd": "0.001100"
+    }
+  ]
+}

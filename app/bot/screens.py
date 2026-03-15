@@ -4,6 +4,67 @@ from app.bot.keyboards import back_menu_keyboard
 from app.bot.ux import classify_publication_error, format_schedule, human_draft_status, human_mode_label, human_publication_error, human_publication_status
 
 
+def _format_generation_overview(summary: dict | None) -> str:
+    if not summary:
+        return ''
+    queue = summary.get('queue') or {}
+    plan = summary.get('plan') or {}
+    guardrails = summary.get('guardrails') or {}
+    lines = ['', 'Generation status:']
+    lines.append(f"• Тариф: {plan.get('label') or plan.get('code') or '—'}")
+    lines.append(f"• Статус плана: {plan.get('status_label') or plan.get('status') or plan.get('access_flag') or '—'}")
+    lines.append(
+        f"• Очередь: queued {queue.get('queued', 0)} / processing {queue.get('processing', 0)} / failed {queue.get('failed', 0)}"
+    )
+    latest_status = queue.get('latest_status')
+    if latest_status:
+        lines.append(f'• Последняя generation job: {latest_status}')
+    latest_error = queue.get('latest_error')
+    if latest_error:
+        lines.append(f'• Последняя ошибка: {latest_error}')
+    quota_used = plan.get('generation_used')
+    quota_limit = plan.get('generation_limit')
+    quota_remaining = plan.get('generation_remaining')
+    if quota_limit is not None:
+        lines.append(f"• Лимит generation: {quota_used or 0}/{quota_limit}")
+    if quota_remaining is not None:
+        lines.append(f"• Остаток generation: {quota_remaining}")
+    period_end = plan.get('period_end')
+    if period_end:
+        lines.append(f'• Лимит действует до: {period_end}')
+    block_reason = plan.get('block_reason')
+    if plan.get('is_blocked') and block_reason:
+        lines.append(f'• Причина блокировки: {block_reason}')
+    elif guardrails.get('hard_stop_reached'):
+        reasons = '; '.join(guardrails.get('blocking_reasons') or []) or 'лимит исчерпан'
+        lines.append(f'• Генерация недоступна: {reasons}')
+    elif guardrails.get('soft_limit_reached'):
+        lines.append('• Лимиты почти исчерпаны: generation скоро может заблокироваться')
+    return '\n'.join(lines)
+
+
+def _format_draft_generation_details(summary: dict | None) -> str:
+    overview = _format_generation_overview(summary)
+    if not summary:
+        return overview
+    generation = summary.get('generation') or {}
+    lines = [overview] if overview else []
+    if generation.get('provider') or generation.get('model'):
+        lines.append(f"• Provider/model: {generation.get('provider') or '—'} / {generation.get('model') or '—'}")
+    if generation.get('finish_reason') == 'provider_unavailable':
+        lines.append('• Provider сейчас деградировал: результат собран через graceful degradation/fallback path')
+    elif generation.get('finish_reason'):
+        lines.append(f"• Итог generation: {generation.get('finish_reason')}")
+    if generation.get('failover_activated'):
+        outcome = generation.get('failover_outcome') or 'activated'
+        fallback_provider = generation.get('fallback_provider')
+        suffix = f' → {fallback_provider}' if fallback_provider else ''
+        lines.append(f'• Failover: {outcome}{suffix}')
+    if generation.get('primary_error_message'):
+        lines.append(f"• Ошибка provider’а: {generation.get('primary_error_message')}")
+    return '\n'.join(line for line in lines if line)
+
+
 @dataclass(slots=True)
 class ChannelSummary:
     id: str
@@ -73,7 +134,7 @@ def channels_list_screen(channels: list[ChannelSummary]):
 
 
 
-def channel_dashboard_screen(title: str, mode: str, agents_count: int, content_plans_count: int = 0, drafts_count: int = 0) -> dict:
+def channel_dashboard_screen(title: str, mode: str, agents_count: int, content_plans_count: int = 0, drafts_count: int = 0, generation_summary: dict | None = None) -> dict:
     next_step = 'Следующий шаг: открой «Контент-план», чтобы запустить первый рабочий цикл.'
     if content_plans_count > 0 and drafts_count == 0:
         next_step = 'Следующий шаг: открой «Контент-план» и сгенерируй идеи или первые черновики.'
@@ -85,19 +146,16 @@ def channel_dashboard_screen(title: str, mode: str, agents_count: int, content_p
             f'Режим: {human_mode_label(mode)}\n'
             f'Агентов: {agents_count}\n'
             f'Контент-планов: {content_plans_count}\n'
-            f'Черновиков: {drafts_count}\n\n'
+            f'Черновиков: {drafts_count}\n'
+            f'{_format_generation_overview(generation_summary)}\n\n'
             f'{next_step}\n'
             'Остальные разделы ниже нужны, когда захочешь изменить настройки, команду, публикации или режим работы.'
         ),
         'buttons': [
-            ['Настройки'],
-            ['Агенты'],
-            ['Контент-план'],
-            ['Черновики'],
-            ['Публикации'],
-            ['Режим работы'],
-            ['Назад к каналам'],
-            ['Главное меню'],
+            ['⚙️ Настройки', '🤖 Агенты'],
+            ['🗂 План', '📝 Черновики'],
+            ['📢 Посты', '🎛 Режим'],
+            ['⬅️ К каналам', '🏠 Главное меню'],
         ],
     }
 
@@ -140,21 +198,26 @@ def channel_agents_screen(agents: list[AgentSummary]) -> dict:
 
 
 
-def channel_content_plan_screen(plans: list[ContentPlanSummary], tasks_total: int) -> dict:
+def channel_content_plan_screen(plans: list[ContentPlanSummary], tasks_total: int, generation_summary: dict | None = None) -> dict:
     if not plans:
         body = (
-            'Контент-планов пока нет.\n\n'
+            'Контент-планов пока нет.\n'
+            f'{_format_generation_overview(generation_summary)}\n\n'
             'Следующий шаг: нажми «Создать контент-план».\n'
             'Сначала сгенерируй идеи или создай первый план, чтобы увидеть здесь периоды и задачи.\n'
             'После этого я помогу перейти к первым черновикам.'
         )
-        buttons = [['Создать контент-план'], ['Сгенерировать 10 идей'], ['Назад'], ['Главное меню']]
+        buttons = [['Создать контент-план', '💡 10 идей'], ['⬅️ Назад', '🏠 Главное меню']]
     else:
-        lines = [f'Планов: {len(plans)}', f'Всего задач: {tasks_total}', '', 'Следующий шаг: сгенерируй идеи или сразу создай первые 3 черновика.', '']
+        lines = [f'Планов: {len(plans)}', f'Всего задач: {tasks_total}']
+        overview = _format_generation_overview(generation_summary)
+        if overview:
+            lines.extend(['', *overview.splitlines()])
+        lines.extend(['', 'Следующий шаг: сгенерируй идеи или сразу создай первые 3 черновика.', ''])
         for plan in plans[:5]:
             lines.append(f'• {plan.period} / {plan.date_range} / {plan.status} / задач: {plan.tasks_count}')
         body = '\n'.join(lines)
-        buttons = [['Сгенерировать 10 идей'], ['Создать 3 черновика'], ['Назад'], ['Главное меню']]
+        buttons = [['💡 Сгенерировать 10 идей', '📝 Создать 3 черновика'], ['⬅️ Назад', '🏠 Главное меню']]
     return section_screen('Контент-план', body, buttons=buttons)
 
 
@@ -166,37 +229,39 @@ def channel_drafts_screen(drafts: list[DraftSummary]) -> dict:
             'Следующий шаг один: нажми «Создать 3 черновика».\n'
             'Как только генерация завершится, вернись сюда и открой нужный текст для проверки — здесь будут лежать все новые и отредактированные черновики.'
         )
-        buttons = [['Создать 3 черновика'], ['Назад'], ['Главное меню']]
+        buttons = [['📝 Создать 3 черновика'], ['⬅️ Назад', '🏠 Главное меню']]
     else:
         lines = [f'Черновиков: {len(drafts)}', '', 'Следующий шаг один: открой нужный черновик кнопкой ниже.', '']
         buttons = []
         for draft in drafts[:7]:
             lines.append(f'• {draft.title} / {human_draft_status(draft.status)} / v{draft.version}')
             buttons.append([draft.title])
-        buttons += [['Назад'], ['Главное меню']]
+        buttons += [['⬅️ Назад', '🏠 Главное меню']]
         body = '\n'.join(lines)
     return section_screen('Черновики', body, buttons=buttons)
 
 
 
-def draft_detail_screen(title: str, status: str, version: int, text: str, created_by_agent: str | None = None) -> dict:
+def draft_detail_screen(title: str, status: str, version: int, text: str, created_by_agent: str | None = None, generation_summary: dict | None = None) -> dict:
     preview = text if len(text) <= 900 else text[:897] + '...'
+    generation_block = _format_draft_generation_details(generation_summary)
+    generation_suffix = f'\n{generation_block}' if generation_block else ''
     body = (
         f'Задача: {title}\n'
         f'Статус: {human_draft_status(status)}\n'
         f'Версия: v{version}\n'
-        f'Автор: {created_by_agent or "—"}\n\n'
+        f'Автор: {created_by_agent or "—"}'
+        f'{generation_suffix}\n\n'
         f'{preview}'
     )
     return section_screen(
         'Черновик',
         body,
         buttons=[
-            ['Подтвердить', 'Отклонить'],
-            ['Редактировать', 'Пересобрать'],
-            ['Создать публикацию'],
-            ['Черновики'],
-            ['Главное меню'],
+            ['✅ Подтвердить', '🗑 Отклонить'],
+            ['✏️ Редактировать', '🔁 Пересобрать'],
+            ['📢 В пост', '📝 Черновики'],
+            ['🏠 Главное меню'],
         ],
     )
 
@@ -240,10 +305,9 @@ def publication_detail_screen(title: str, status: str, scheduled_for: str | None
         'Публикация',
         body,
         buttons=[
-            ['Опубликовать сейчас', 'Запланировать'],
-            ['Отменить публикацию'],
-            ['Публикации'],
-            ['Главное меню'],
+            ['🚀 Опубликовать', '🕒 Запланировать'],
+            ['🗑 Отменить публикацию', '📢 Посты'],
+            ['🏠 Главное меню'],
         ],
     )
 
@@ -260,10 +324,8 @@ def mode_screen(current_mode: str) -> dict:
         'Режим работы',
         body,
         buttons=[
-            ['Режим: ручной'],
-            ['Режим: ассистент'],
-            ['Режим: авто'],
-            ['Назад'],
-            ['Главное меню'],
+            ['✋ Ручной', '🤝 Ассистент'],
+            ['⚡ Авто'],
+            ['⬅️ Назад', '🏠 Главное меню'],
         ],
     )

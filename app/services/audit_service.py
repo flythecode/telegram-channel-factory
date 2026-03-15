@@ -22,6 +22,7 @@ ACTION_LABELS = {
     'approve_draft': 'черновик подтверждён',
     'reject_draft': 'черновик отклонён',
     'regenerate_draft': 'черновик перегенерирован',
+    'rewrite_draft': 'черновик переписан',
     'create_publication': 'создана публикация',
     'update_publication': 'обновлена публикация',
     'publish_now': 'запущена немедленная публикация',

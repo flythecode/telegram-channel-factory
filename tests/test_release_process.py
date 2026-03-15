@@ -12,6 +12,8 @@ def test_release_update_script_enforces_non_root_and_secret_file_policy():
     assert 'Run this script as the runtime user' in script
     assert 'must not contain inline TELEGRAM_BOT_TOKEN' in script
     assert 'TELEGRAM_BOT_TOKEN_FILE' in script
+    assert 'must not contain inline LLM_API_KEY' in script
+    assert 'LLM_API_KEY_FILE' in script
 
 
 def test_release_update_script_requires_deterministic_git_state_or_release_ref():

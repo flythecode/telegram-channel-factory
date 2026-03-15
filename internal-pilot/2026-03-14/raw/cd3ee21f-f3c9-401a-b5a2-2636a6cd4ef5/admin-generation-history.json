@@ -1,0 +1,61 @@
+{
+  "items": [
+    {
+      "id": "b619c852-6f97-4096-a0b6-69092b03b3c2",
+      "created_at": "2026-03-14T19:14:09.652964Z",
+      "client_id": "cd3ee21f-f3c9-401a-b5a2-2636a6cd4ef5",
+      "project_id": "1d02e3b4-acab-4ce5-b307-ba0d09104a42",
+      "channel_id": "fbe9664b-90e5-4fe2-b6aa-b8e26f4357ef",
+      "task_id": "c874afce-52f7-44a6-b9d2-30762ec9276e",
+      "draft_id": "5256ffa8-12f3-4f11-a897-abbffd90a97a",
+      "operation_type": "draft",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "status": "succeeded",
+      "request_id": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": "0.000000",
+      "latency_ms": 0
+    },
+    {
+      "id": "a23d6b5a-6d99-4e88-a8a7-1df191def102",
+      "created_at": "2026-03-14T19:14:09.459397Z",
+      "client_id": "cd3ee21f-f3c9-401a-b5a2-2636a6cd4ef5",
+      "project_id": "1d02e3b4-acab-4ce5-b307-ba0d09104a42",
+      "channel_id": "fbe9664b-90e5-4fe2-b6aa-b8e26f4357ef",
+      "task_id": null,
+      "draft_id": null,
+      "operation_type": "content_plan",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "status": "succeeded",
+      "request_id": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": "0.000000",
+      "latency_ms": 0
+    },
+    {
+      "id": "d10c5c41-5016-458f-98a3-11b14c7f3c74",
+      "created_at": "2026-03-14T19:14:09.253293Z",
+      "client_id": "cd3ee21f-f3c9-401a-b5a2-2636a6cd4ef5",
+      "project_id": "1d02e3b4-acab-4ce5-b307-ba0d09104a42",
+      "channel_id": "fbe9664b-90e5-4fe2-b6aa-b8e26f4357ef",
+      "task_id": null,
+      "draft_id": null,
+      "operation_type": "ideas",
+      "provider": "openai",
+      "model": "gpt-4.1-mini",
+      "status": "succeeded",
+      "request_id": null,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost_usd": "0.000000",
+      "latency_ms": 0
+    }
+  ]
+}

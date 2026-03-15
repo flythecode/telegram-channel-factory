@@ -17,6 +17,21 @@
 
 Продукт решает задачу **создания и ведения Telegram-канала как системы**, а не как набора ручных действий.
 
+### Tenant model
+
+В целевой SaaS-модели продукт работает так:
+- **1 платящий клиент (`client account`)**
+- **→ 1+ channel projects** внутри его аккаунта
+- **→ 1 project-scoped agent team/runtime на каждый канал/проект**
+
+Для текущего MVP `workspace` — это операционный контейнер клиента, а `project` — отдельный channel project. На практике это значит:
+- один клиент может вести несколько каналов;
+- каждый канал обслуживается своим `project`;
+- у каждого такого `project` своя команда агентов, свои настройки и свой execution context;
+- `отдельные агенты на клиента` в этой архитектуре означают изолированные agent profiles и execution context на уровне client/project/channel, а не отдельный provider API key на каждого клиента;
+- контекст, prompts, usage и будущий LLM runtime не должны смешиваться между проектами одного клиента.
+
+
 Пользователь через Telegram-бота может:
 - создать проект канала
 - подключить существующий Telegram-канал
@@ -53,7 +68,7 @@
 - `drafts`
 - `publications`
 - `audit-events`
-- `project-config-versions`
+- `project-config-versions` — versioned snapshots of project settings, agent team config, and prompt state for reproducible/audit-friendly changes
 
 ### 3. Channel/content workflow
 - project creation
@@ -181,6 +196,29 @@ MVP launch path выглядит так:
 - `app/services/telegram_publisher.py`
 - `app/services/stub_publisher.py`
 
+### Architecture decisions
+- `MULTI_TENANT_LLM_ARCHITECTURE_V1.md` — целевая multi-tenant SaaS-архитектура для LLM generation layer, tenant isolation, usage/cost accounting и queue-first execution
+- `LLM_FAILOVER_POLICY_V1.md` — policy для fallback-provider и graceful degradation при outage основного LLM provider
+- `MODEL_ROUTING_STRATEGY_V1.md` — стратегия выбора model profiles для ideas, content plan, drafts, rewrite и premium multi-stage workflows
+- `TARIFF_AGENT_MODEL_MATRIX_V1.md` — матрица тарифов, client levels, доступных agent presets, execution modes и routing profiles для `trial` / `starter` / `pro` / `business`
+- `TARIFF_MODEL_BASELINE_V1.md` — каноническая тарифная модель v1: plan limits, service tier / execution mode и cost-derived pricing baseline на основе реальных generation costs
+- `LLM_COST_OPERATOR_RUNBOOK.md` — operator runbook по LLM-расходам, лимитам, provider degradation и ручному разбору cost anomalies
+- `PRODUCTION_LLM_BASELINE_V1.md` — каноническая фиксация новой multi-tenant LLM-agent architecture как production baseline, включая обязательные runtime gates и deprecated pre-baseline подходы
+- `INTERNAL_PILOT_COST_VALIDATION_PLAN.md` + `internal-pilot/YYYY-MM-DD/*` — пакет controlled internal pilot для проверки реальной экономики тарифа; raw evidence можно собрать через `python3 scripts/collect_internal_pilot_evidence.py`
+- draft orchestration now supports real staged multi-agent generation: each active strategist/researcher/writer/editor-style stage executes as a separate LLM call inside the tenant-scoped execution context, while aggregate usage/latency roll up into the final generation result.
+- generation mode is now tariff-aware: cheap plans (`trial/free/starter/basic/lite`) are forced into `single-pass`, while premium plans (`pro/business/growth/premium/scale/enterprise`) keep `multi-stage` execution when multiple agents are active; an explicit `client_account.settings.generation_mode` override can pin either mode.
+- content plan generation now runs through the shared generation service and persists the generated plan summary on `content_plans.summary`.
+- soft-limit guardrails are now computed from `llm_generation_events` for the active billing period and exposed in generation metadata under `guardrails`; configure them via `client_account.settings.generation_guardrails` using client-level limits (`client_budget_limit_usd`, `client_generation_quota_limit`, `client_token_quota_limit`, `warn_at_ratio`) and optional per-channel overrides in `channel_limits[{channel_id}]`.
+- guardrails also support UTC-scoped daily and calendar-month caps for client/channel totals plus operation-specific caps (`client_daily_*`, `client_monthly_*`, `client_operation_daily_limits`, `client_operation_monthly_limits`, and per-channel `daily_*`, `monthly_*`, `operation_daily_limits`, `operation_monthly_limits`); runtime metadata now includes per-window snapshots in `guardrails.client.windows[]` / `guardrails.channel.windows[]`.
+- hard-stop guardrails now block draft/content-plan/rewrite/regenerate generation when any client/channel budget or quota is exceeded across billing, daily, monthly, or operation-specific caps; the snapshot exposes `hard_stop_reached`, `blocked_scopes`, and `blocking_reasons`, and API endpoints return HTTP 400 with the blocking reason instead of generating new content beyond the limit.
+- cost dashboard / admin reporting baseline added: `/api/v1/users/me/client-account/cost-dashboard` now returns aggregated generation spend/usage for the current client broken down by channel, operation, model, and month so operators can review application LLM costs without querying raw `llm_generation_events` manually.
+- unified admin economics dashboard added: `/api/v1/admin/generation/dashboard` now returns one operator-facing rollup for all generation spend/usage with totals plus breakdowns by client, project, channel, operation, model, and month; `/api/v1/admin/generation/dashboard/export` emits the same view as CSV for spreadsheet reconciliation.
+- CSV export for pricing/economics reconciliation added: `/api/v1/admin/generation/usage/export`, `/api/v1/admin/generation/cost-breakdown/export`, `/api/v1/admin/generation/dashboard/export`, and `/api/v1/users/me/client-account/cost-dashboard/export` now emit spreadsheet-friendly `text/csv` reports for usage summaries, cost breakdowns, unified admin dashboard data, and client dashboard snapshots.
+- pricing/billing baseline added: `/api/v1/users/me/client-account/pricing` now builds a rate card from real `llm_generation_events`, applies configurable target margin / contingency / overhead assumptions from `client_account.settings.pricing_model`, and returns recommended per-operation prices plus operator-facing deltas (`delta_vs_average_cost_usd`, `recommended_unit_margin_*`, `observed_share_pct`) and a monthly plan catalog (`trial/starter/pro/business`) with both catalog baseline COGS/margin and sample-based scaling projections (`observed_blended_generation_cost_usd`, `projected_sample_*`).
+- tariff model is now explicitly locked: plan catalog rows expose `service_tier` + `execution_mode`, trial is restricted to `starter_3`, and `TARIFF_MODEL_BASELINE_V1.md` defines the canonical mapping between plan limits, preset access, runtime mode, and cost-derived pricing guidance.
+- generation pipeline observability baseline added: `app/services/generation_observability.py` now emits structured logs for generation completion, queue snapshots, enqueue/claim/process outcomes, worker-pool batches, provider retries/failover, and graceful degradation; queue metrics expose status/operation/project depth, while in-memory provider health snapshots track success/failure counters, retryable failures, last error/status code, latency, request id, model, and last failover outcome.
+- production baseline is now explicitly locked to the new multi-tenant LLM architecture: `PRODUCTION_LLM_BASELINE_V1.md` defines generation-service-first runtime, tenant-isolated execution context, `llm_generation_events` attribution, queue/worker execution, guardrails, pricing/admin visibility, and secret-file-based provider credentials as the canonical live path for Telegram Channel Factory.
+
 ---
 
 ## Runtime modes
@@ -290,6 +328,7 @@ make deploy-smoke
 - запуск сервисов: от имени `tcf`, не `root`
 - production `.env` хранить вне git working tree, например в `/etc/telegram-channel-factory/.env.live`
 - реальный Telegram token хранить отдельно, например в `/etc/telegram-channel-factory/secrets/telegram_bot_token`
+- реальный LLM provider key хранить отдельно, например в `/etc/telegram-channel-factory/secrets/llm_api_key`
 - release script должен передавать env через `docker compose --env-file ...`, без копирования secrets в `.env` внутри repo
 
 Подготовка сервера:
@@ -309,7 +348,9 @@ sudo install -o root -g tcf -m 640 /srv/telegram-channel-factory/.env.live.examp
 sudo install -d -o root -g tcf -m 750 /etc/telegram-channel-factory/secrets
 sudo install -o root -g tcf -m 640 /srv/telegram-channel-factory/secrets.example/telegram_bot_token.example \
   /etc/telegram-channel-factory/secrets/telegram_bot_token
-# then replace placeholder content with the real rotated token
+sudo install -o root -g tcf -m 640 /srv/telegram-channel-factory/secrets.example/llm_api_key.example \
+  /etc/telegram-channel-factory/secrets/llm_api_key
+# then replace placeholder content with the real rotated secrets
 ```
 
 Обновление/release выполнять только от имени `tcf`.
@@ -333,7 +374,7 @@ sudo -u tcf APP_DIR=/srv/telegram-channel-factory \
 
 `scripts/release_update.sh` дополнительно:
 - отказывается работать от `root`
-- валится, если production env использует inline `TELEGRAM_BOT_TOKEN` вместо secret file
+- валится, если production env использует inline `TELEGRAM_BOT_TOKEN` или inline `LLM_API_KEY` вместо secret file
 - требует детерминированный git state: либо `RELEASE_REF`, либо normal branch fast-forward path
 - делает `python3 -m compileall app scripts`
 - применяет `alembic upgrade head`
@@ -363,11 +404,30 @@ sudo -u tcf APP_DIR=/srv/telegram-channel-factory \
 - `RUNTIME_MODE` = `stub | demo | live`
 - `PUBLISHER_BACKEND` = `stub | telegram`
 - `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_BOT_TOKEN_FILE`
 - `TELEGRAM_REQUEST_TIMEOUT_SECONDS`
+
+### LLM layer
+- `LLM_PROVIDER` = `stub | openai | anthropic | openrouter | gemini`
+- `LLM_API_KEY`
+- `LLM_API_KEY_FILE`
+- `LLM_MODEL_DEFAULT`
+- optional `LLM_BASE_URL`
+- `LLM_TIMEOUT_SECONDS`
+- `LLM_MAX_RETRIES`
+- `LLM_ROUTING_STRATEGY` = `single-model | by-operation | tiered`
+- `LLM_FAILOVER_STRATEGY` = `disabled | fallback-provider | graceful-degradation`
+- optional `LLM_FALLBACK_PROVIDER` / `LLM_FALLBACK_MODEL`
 
 ### Worker
 - `WORKER_POLL_INTERVAL_SECONDS`
 - `WORKER_BATCH_LIMIT`
+- `GENERATION_WORKER_POOL_SIZE`
+- `GENERATION_JOB_BATCH_LIMIT`
+
+Generation jobs now drain through a dedicated worker pool that groups queued jobs by `project_id` and keeps each project's execution inside one worker slot for safer tenant-scoped isolation. Load regressions cover large queue ordering, sustained multi-batch backlog draining, and worker-pool saturation against global/client/project rate limits.
+
+Load-oriented regression coverage lives in `tests/test_generation_queue.py` and `tests/test_generation_worker_pool.py`: the suite now exercises large queued backlogs, multi-tenant slot assignment, and paid-vs-trial prioritization under batch pressure.
 
 ---
 

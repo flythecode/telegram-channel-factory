@@ -1,0 +1,5 @@
+client_id,project_id,channel_id,operation_type,events_count,successful_events_count,failed_events_count,total_prompt_tokens,total_completion_tokens,total_tokens,total_cost_usd,average_latency_ms
+11977e9e-3970-431c-82b0-5cee23cf69a7,c57e0741-fd74-4ded-b844-c28a6fc16bbf,02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05,content_plan,1,1,0,0,0,0,0.000000,0.00
+11977e9e-3970-431c-82b0-5cee23cf69a7,c57e0741-fd74-4ded-b844-c28a6fc16bbf,02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05,draft,1,1,0,0,0,0,0.000000,0.00
+11977e9e-3970-431c-82b0-5cee23cf69a7,c57e0741-fd74-4ded-b844-c28a6fc16bbf,02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05,ideas,1,1,0,0,0,0,0.000000,0.00
+11977e9e-3970-431c-82b0-5cee23cf69a7,c57e0741-fd74-4ded-b844-c28a6fc16bbf,02a407e6-6d9f-44f7-b9ea-d9fbf2be3d05,rewrite_draft,1,1,0,0,0,0,0.000000,0.00
