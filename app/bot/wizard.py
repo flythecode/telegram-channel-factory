@@ -3,6 +3,18 @@ from dataclasses import dataclass, field
 from app.bot.keyboards import back_menu_keyboard, project_ready_keyboard
 
 
+SUMMARY_DESCRIPTION_PREVIEW_LIMIT = 700
+
+
+def _summary_preview(value: str | None, limit: int = SUMMARY_DESCRIPTION_PREVIEW_LIMIT) -> str:
+    if not value:
+        return '—'
+    compact = ' '.join(value.split())
+    if len(compact) <= limit:
+        return compact
+    return compact[: limit - 1].rstrip() + '…'
+
+
 CHANNEL_CREATION_GUIDE_TEXT = (
     'Если канала ещё нет, создай его прямо в Telegram:\n\n'
     '1. Открой Telegram → «Новый канал».\n'
@@ -111,7 +123,7 @@ class ProjectWizardService:
             f'• Ниша: {state.niche or "—"}\n'
             f'• Язык: {state.language or "—"}\n'
             f'• Цель: {state.goal or "—"}\n'
-            f'• Описание проекта: {state.description or "—"}\n'
+            f'• Описание проекта: {_summary_preview(state.description)}\n'
             f'• Формат: {state.content_format or "—"}\n'
             f'• Частота: {state.posting_frequency or "—"}\n\n'
             'Следующий шаг один: нажми «Подтвердить проект».\n'

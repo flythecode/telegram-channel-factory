@@ -124,7 +124,10 @@ def test_resolve_screen_for_text_walks_through_stateful_wizard_steps():
     assert 'Шаг 5/7' in content_format.text
     assert session_store.get_state(chat_id).goal == 'Личный бренд'
 
-    frequency = resolve_screen_for_text('Канал про ИИ-агентов для предпринимателей', chat_id=chat_id)
+    buffered = resolve_screen_for_text('Канал про ИИ-агентов для предпринимателей', chat_id=chat_id)
+    assert 'Контекст сохранён в буфер' in buffered.text
+
+    frequency = resolve_screen_for_text('Готово', chat_id=chat_id)
     assert 'Шаг 6/7' in frequency.text
     assert session_store.get_state(chat_id).description == 'Канал про ИИ-агентов для предпринимателей'
 

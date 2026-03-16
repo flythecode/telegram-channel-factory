@@ -31,6 +31,26 @@ def test_wizard_summary_screen_renders_collected_state():
     assert 'Ежедневно' in screen.text
 
 
+def test_wizard_summary_screen_truncates_very_long_description_preview():
+    service = BotService()
+    long_description = 'Очень длинный контекст. ' * 500
+    state = ProjectWizardState(
+        name='Alpha Channel',
+        niche='AI',
+        language='Русский',
+        goal='Личный бренд',
+        description=long_description,
+        content_format='Аналитика',
+        posting_frequency='Ежедневно',
+    )
+    screen = service.wizard_summary_screen(state)
+    assert 'Проверь настройки проекта' in screen.text
+    assert len(screen.text) < 2000
+    assert '…' in screen.text
+    assert long_description not in screen.text
+
+
+
 def test_wizard_has_preset_connection_and_ready_steps():
     service = BotService()
     assert service.wizard_preset_screen().step == 'preset'
